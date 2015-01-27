@@ -1,0 +1,224 @@
+import javax.media.opengl.GL2;
+
+/*
+ * TODO: Initiation: Force initial yaw to be 0
+ * TODO: Fix thumb
+ * TODO: Develop a method to properly estimate angles of joints
+ * TODO: Fix bug when pitch = 90 degrees
+ * 
+ * NOTE: Remember to apply rotations in order of ROLL, PITCH, YAW!
+ * NOTE: Yaw in the counter clockwise direction is +ve
+ */
+public class Hand {
+	private static final float SCALE = 0.25f; //scales all dimensions
+	private static final float[] ZERO3 = {0.0f, 0.0f, 0.0f};
+	//Hard-coded angle offsets, probably a bad idea...
+	public static final float ROLLOFFSET = 180.0f;
+	public static final float PITCHOFFSET = 0.0f;
+	public static final float YAWOFFSET = 0.0f;
+	//Right hand, in centimeters
+	//P = Palm, T = Thumb, I = Index, M = Middle, R = Ring, L = Little
+	private static final float[] ANGLEWEIGHTS = {0.0f, 1.0f, 0.4f};
+	private static final float[] THUMBWEIGHTS = {1.3f, -0.3f, -0.3f};
+	private static final float JOINTLENGTH = 0.1f * SCALE;
+	private static final float HANDHEIGHT = 2.0f * SCALE;
+	private static final float FINGERWIDTH = 2.0f * SCALE;
+	private static final float[] PBASE = {0.0f * SCALE, 0.0f * SCALE, 0.0f * SCALE};
+	private static final float PLENGTH = 11.0f * SCALE;
+	private static final float PWIDTH = 10.0f * SCALE;
+	//Lengths: 0 = proximal, 1 = intermediate, 2 = distal
+	private static final float[] TBASE = {PWIDTH / 2, 0.0f, 0.0f}; //Note that PALMWIDTH is already scaled
+	private static final float[] TLENGTH = {6.0f * SCALE, 4.0f * SCALE, 4.0f * SCALE};
+	private static final float[] IBASE = {4.0f * SCALE, 0.0f, PLENGTH + JOINTLENGTH};
+	private static final float[] ILENGTHS = {5.0f * SCALE, 2.5f * SCALE, 3.0f * SCALE};
+	private static final float[] MBASE = {1.25f * SCALE, 0.0f, PLENGTH + JOINTLENGTH};
+	private static final float[] MLENGTHS = {5.0f * SCALE, 3.0f * SCALE, 3.0f * SCALE};
+	private static final float[] RBASE = {-1.25f * SCALE, 0.0f, PLENGTH + JOINTLENGTH};
+	private static final float[] RLENGTHS = {5.0f * SCALE, 2.5f * SCALE, 3.0f * SCALE};
+	private static final float[] LBASE = {-4.0f * SCALE, 0.0f, PLENGTH + JOINTLENGTH};
+	private static final float[] LLENGTHS = {3.0f * SCALE, 2.0f * SCALE, 3.0f * SCALE};
+	
+	Side side = Side.RIGHT;
+	private float[] pAngles = new float[3];
+	private float[] tAngles = new float[3];
+	private float[] iAngles = new float[3];
+	private float[] mAngles = new float[3];
+	private float[] rAngles = new float[3];
+	private float[] lAngles = new float[3];
+	
+	//WARNING: THIS IS NOT AN ARRAY COPY!!!!!!!!!!!!!!!
+	private float[] pInit = ZERO3;
+	private float[] tInit = ZERO3;
+	private float[] iInit = ZERO3;
+	private float[] mInit = ZERO3;
+	private float[] rInit = ZERO3;
+	private float[] lInit = ZERO3;
+	private boolean isInit = false;
+	
+	
+	static enum Side {
+		LEFT, 
+		RIGHT
+	}
+	
+	static enum Finger {
+		PALM,
+		THUMB,
+		INDEX,
+		MIDDLE,
+		RING,
+		LITTLE
+	}
+	
+	public boolean isInit(){
+		return isInit;
+	}
+	
+	//Converts angles from radians to degrees
+	//DO NOT CHANGE ORDER (follows sensor ordering: roll, pitch, yaw)
+	public void setRadAngles(float[] angles){
+		assert angles.length % 3 == 0 : "setRadAngles() bad input!";
+		if (angles.length >= 3){
+			pAngles[0] = radToDeg(angles[0]) + ROLLOFFSET;
+			pAngles[1] = radToDeg(angles[1]) + PITCHOFFSET;
+			pAngles[2] = radToDeg(angles[2]) + YAWOFFSET;
+		}
+		//TODO: Thumb
+		if (angles.length >= 6){
+			iAngles[0] = radToDeg(angles[3]) + ROLLOFFSET;
+			iAngles[1] = radToDeg(angles[4]) + PITCHOFFSET;
+			iAngles[2] = radToDeg(angles[5]) + YAWOFFSET;
+		}
+	}
+	
+	public void initRadAngles(Side side, float[] angles){
+		assert isInit == false : "Re-initiation";
+		assert angles.length % 3 == 0 : "initRadAngles() bad input!";
+		this.side = side;
+		if (angles.length >= 3){
+			pInit[0] = radToDeg(angles[0]) + ROLLOFFSET;
+			pInit[1] = radToDeg(angles[1]) + PITCHOFFSET;
+			pInit[2] = radToDeg(angles[2]) + YAWOFFSET;
+		}
+		//TODO: Thumb
+		if (angles.length >= 6){
+			iInit[0] = radToDeg(angles[3]) + ROLLOFFSET;
+			iInit[1] = radToDeg(angles[4]) + PITCHOFFSET;
+			iInit[2] = radToDeg(angles[5]) + YAWOFFSET;
+		}
+		
+		isInit = true;
+	}
+	
+	public void drawHand(GL2 gl)
+	{
+		gl.glPushMatrix();
+		
+		//draw palm
+		drawPalm(gl);
+		
+		if (side == Side.RIGHT){
+			gl.glPushMatrix();
+			drawThumb(gl);
+			gl.glPopMatrix();
+			
+			gl.glPushMatrix();
+			drawIndex(gl);
+			gl.glPopMatrix();
+			
+			gl.glPushMatrix();
+			//drawFinger(gl, MBASE, mAngles, MLENGTHS, pAngles);
+			gl.glPopMatrix();
+			
+			gl.glPushMatrix();
+			//drawFinger(gl, RBASE, rAngles, RLENGTHS, pAngles);
+			gl.glPopMatrix();
+			
+			gl.glPushMatrix();
+			//drawFinger(gl, LBASE, lAngles, LLENGTHS, pAngles);
+			gl.glPopMatrix();
+		}
+		
+		gl.glPopMatrix();
+	}
+	
+	private void drawPalm(GL2 gl){
+		System.out.println(pAngles[2] + " - " + pInit[2]);
+		gl.glTranslatef(PBASE[0], PBASE[1], PBASE[2]);
+		gl.glRotatef(pAngles[2] - pInit[2], 0, 1, 0);
+		gl.glRotatef(pAngles[1], 1, 0, 0);
+		gl.glRotatef(pAngles[0], 0, 0, 1);
+		gl.glPushMatrix();
+		gl.glScalef(PWIDTH, HANDHEIGHT, PLENGTH);
+		Box.drawDefaultBox(gl);
+		gl.glPopMatrix();
+	}
+	
+	private void drawThumb(GL2 gl){
+		//TODO:
+		//System.out.println(angles[2]);
+		gl.glTranslatef(TBASE[0], TBASE[1], TBASE[2]);
+		gl.glRotatef(-pAngles[2] + tAngles[2] * 
+				(tAngles[2] >= 0 ? THUMBWEIGHTS[0] : 1 - THUMBWEIGHTS[0]), 
+				0, 1, 0); //Angle weights should be applied to yaw for thumb
+		gl.glRotatef(-pAngles[1] + tAngles[1], 1, 0, 0);
+		gl.glRotatef(-pAngles[0] + tAngles[0], 0, 0, 1);
+		gl.glPushMatrix();
+		gl.glScalef(FINGERWIDTH, HANDHEIGHT, TLENGTH[0]);
+		Box.drawDefaultBox(gl);
+		gl.glPopMatrix();
+		gl.glTranslatef(0, 0, TLENGTH[0] + JOINTLENGTH);
+		gl.glRotatef(tAngles[2] * 
+				(tAngles[2] >= 0 ? THUMBWEIGHTS[1] : 1 - THUMBWEIGHTS[1]), 
+				0, 1, 0);
+		gl.glPushMatrix();
+		gl.glScalef(FINGERWIDTH, HANDHEIGHT, TLENGTH[1]);
+		Box.drawDefaultBox(gl);
+		gl.glPopMatrix();
+		gl.glTranslatef(0, 0, TLENGTH[1] + JOINTLENGTH);
+		gl.glRotatef(tAngles[2] * 
+				(tAngles[2] >= 0 ? THUMBWEIGHTS[2] : 1 - THUMBWEIGHTS[2]), 
+				0, 1, 0);
+		gl.glPushMatrix();
+		gl.glScalef(FINGERWIDTH, HANDHEIGHT, TLENGTH[2]);
+		Box.drawDefaultBox(gl);
+		gl.glPopMatrix();
+	}
+	
+	private void drawIndex(GL2 gl){
+		float[] offset = new float[3];
+		//System.arraycopy(pAngles, 0, offset, 0, pAngles.length);
+		offset[2] += iInit[2];
+		drawFinger(gl, IBASE, iAngles, ILENGTHS, offset);
+	}
+	
+	//TODO: Other drawFinger functions
+	
+	// base(x, y, z), angles(roll - offset[0], pitch - offset[1], yaw - offset[2])
+	private void drawFinger(GL2 gl, float[] base, float[] angles, float[] lengths, float[] offset){
+		gl.glTranslatef(base[0], base[1], base[2]);
+		gl.glRotatef(-offset[2] + angles[2], 0, 1, 0);
+		gl.glRotatef(-offset[1] + angles[1] * ANGLEWEIGHTS[0], 1, 0, 0);
+		//gl.glRotatef(-offset[0] + angles[0], 0, 0, 1); //Individual finger roll is unlikely
+		gl.glPushMatrix();
+		gl.glScalef(FINGERWIDTH, HANDHEIGHT, lengths[0]);
+		Box.drawDefaultBox(gl);
+		gl.glPopMatrix();
+		gl.glTranslatef(0, 0, lengths[0] + JOINTLENGTH);
+		gl.glRotatef(angles[1] * ANGLEWEIGHTS[1], 1, 0, 0);
+		gl.glPushMatrix();
+		gl.glScalef(FINGERWIDTH, HANDHEIGHT, lengths[1]);
+		Box.drawDefaultBox(gl);
+		gl.glPopMatrix();
+		gl.glTranslatef(0, 0, lengths[1] + JOINTLENGTH);
+		gl.glRotatef(angles[1] * ANGLEWEIGHTS[2], 1, 0, 0);
+		gl.glPushMatrix();
+		gl.glScalef(FINGERWIDTH, HANDHEIGHT, lengths[2]);
+		Box.drawDefaultBox(gl);
+		gl.glPopMatrix();
+	}
+	
+	public float radToDeg(float rad){
+		return (float) (rad  * 180.0f / Math.PI);
+	}
+}

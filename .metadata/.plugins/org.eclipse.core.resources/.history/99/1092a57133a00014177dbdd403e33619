@@ -1,0 +1,39 @@
+import com.jogamp.opengl.math.VectorUtil;
+
+public class Keyboard {
+	private boolean isInit = false;
+	private final float BORDER = Hand.FINGERWIDTH;
+	private final int YKEY = 
+			0;
+	private final int UKEY = 
+			1;
+	private final int HKEY = 
+			2;
+	private final int JKEY =
+			3;
+	private final int NKEY =
+			4;
+	private final int MKEY = 
+			5;
+	private final int KEYNO = 6;
+	/*
+	 * Positions relative to J key (0, 0)
+	 * In centimeters
+	 */
+	private float[][] keyPos = new float[KEYNO][2];
+	private float[] uPos = {BORDER, -0.5f};
+	private float[] jPos = {0, 0};
+	private float[] mPos = {-BORDER, 0.5f};
+	private float[] hPos = {0, -BORDER};
+	private float[] yPos = {uPos[0] - BORDER, uPos[1]};
+	private float[] nPos = {mPos[0] - BORDER, mPos[1]};
+	
+	public void initJPos(float[] jPos){
+		assert jPos.length == 2  : "initJPos() bad input!";
+		assert isInit == false : "Re-Initiation!";
+		
+		VectorUtil.addVec2(this.jPos, this.jPos, jPos);
+		VectorUtil.addVec2(uPos, uPos, jPos);
+		VectorUtil.add
+	}
+}

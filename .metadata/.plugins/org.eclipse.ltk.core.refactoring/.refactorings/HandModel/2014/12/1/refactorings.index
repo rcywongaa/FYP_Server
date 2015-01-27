@@ -1,0 +1,6 @@
+1419856088488	Rename local variable 'dPos'
+1419876657634	Rename method 'calcUp'
+1419876876546	Delete element
+1420025047784	Rename field 'LIndexYaw'
+1420025054960	Rename field 'LIndexPitch'
+1420025065287	Rename field 'LIndexRoll'

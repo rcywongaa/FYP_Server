@@ -1,0 +1,13 @@
+public class Keyboard {
+	private static float[] YPOS = new float[2];
+	private static float[] UPOS = new float[2];
+	private static float[] HPOS = new float[2];
+	private static float[] JPOS = new float[2];
+	private static float[] NPOS = new float[2];
+	private static float[] MPOS = new float[2];
+	
+	public void initJPos(float[] jPos){
+		assert jPos.length == 2  : "initJPos() bad input!";
+		System.arraycopy(jPos, 0, JPOS, 0, JPOS.length);
+	}
+}

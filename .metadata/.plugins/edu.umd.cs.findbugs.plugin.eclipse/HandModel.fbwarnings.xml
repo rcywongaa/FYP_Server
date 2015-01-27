@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<BugCollection version="3.0.0" sequence="1" timestamp="1421194734283" analysisTimestamp="1421194714669" release="">
+  <Project projectName="HandModel">
+    <Jar>C:\Users\wongrufus\Desktop\Google Drive\Courses\FYP\workspace\HandModel\bin</Jar>
+    <AuxClasspathEntry>C:\Users\wongrufus\Desktop\Google Drive\Courses\FYP\workspace\HandModel\bin</AuxClasspathEntry>
+    <AuxClasspathEntry>C:\Users\wongrufus\Desktop\Google Drive\Courses\FYP\workspace\JOGL\gluegen-rt.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>C:\Users\wongrufus\Desktop\Google Drive\Courses\FYP\workspace\JOGL\gluegen-rt-natives-windows-amd64.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>C:\Users\wongrufus\Desktop\Google Drive\Courses\FYP\workspace\JOGL\jogl-all.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>C:\Users\wongrufus\Desktop\Google Drive\Courses\FYP\workspace\JOGL\jogl-all-android-natives-windows-amd64.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>C:\Users\wongrufus\Desktop\Google Drive\Courses\FYP\workspace\mfz-rxtx-2.2-20081207-win-x64\RXTXcomm.jar</AuxClasspathEntry>
+    <AuxClasspathEntry>C:\Program Files (x86)\eclipse\jre\lib\rt.jar</AuxClasspathEntry>
+    <SrcDir>C:\Users\wongrufus\Desktop\Google Drive\Courses\FYP\workspace\HandModel\src</SrcDir>
+    <Cloud id="edu.umd.cs.findbugs.cloud.doNothingCloud" online="false"></Cloud>
+  </Project>
+  <BugInstance type="EI_EXPOSE_REP" priority="2" rank="18" abbrev="EI" category="MALICIOUS_CODE" first="1">
+    <Class classname="Camera">
+      <SourceLine classname="Camera" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    </Class>
+    <Method classname="Camera" name="getAt" signature="()[F" isStatic="false">
+      <SourceLine classname="Camera" start="61" end="61" startBytecode="0" endBytecode="46" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    </Method>
+    <Field classname="Camera" name="at" signature="[F" isStatic="false">
+      <SourceLine classname="Camera" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    </Field>
+    <SourceLine classname="Camera" start="61" end="61" startBytecode="4" endBytecode="4" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    <SourceLine classname="Camera" start="61" end="61" startBytecode="4" endBytecode="4" sourcefile="Camera.java" sourcepath="Camera.java"/>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP" priority="2" rank="18" abbrev="EI" category="MALICIOUS_CODE" first="1">
+    <Class classname="Camera">
+      <SourceLine classname="Camera" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    </Class>
+    <Method classname="Camera" name="getPosition" signature="()[F" isStatic="false">
+      <SourceLine classname="Camera" start="57" end="57" startBytecode="0" endBytecode="46" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    </Method>
+    <Field classname="Camera" name="position" signature="[F" isStatic="false">
+      <SourceLine classname="Camera" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    </Field>
+    <SourceLine classname="Camera" start="57" end="57" startBytecode="4" endBytecode="4" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    <SourceLine classname="Camera" start="57" end="57" startBytecode="4" endBytecode="4" sourcefile="Camera.java" sourcepath="Camera.java"/>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP" priority="2" rank="18" abbrev="EI" category="MALICIOUS_CODE" first="1">
+    <Class classname="Camera">
+      <SourceLine classname="Camera" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    </Class>
+    <Method classname="Camera" name="getRight" signature="()[F" isStatic="false">
+      <SourceLine classname="Camera" start="69" end="69" startBytecode="0" endBytecode="46" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    </Method>
+    <Field classname="Camera" name="right" signature="[F" isStatic="false">
+      <SourceLine classname="Camera" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    </Field>
+    <SourceLine classname="Camera" start="69" end="69" startBytecode="4" endBytecode="4" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    <SourceLine classname="Camera" start="69" end="69" startBytecode="4" endBytecode="4" sourcefile="Camera.java" sourcepath="Camera.java"/>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP" priority="2" rank="18" abbrev="EI" category="MALICIOUS_CODE" first="1">
+    <Class classname="Camera">
+      <SourceLine classname="Camera" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    </Class>
+    <Method classname="Camera" name="getUp" signature="()[F" isStatic="false">
+      <SourceLine classname="Camera" start="65" end="65" startBytecode="0" endBytecode="46" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    </Method>
+    <Field classname="Camera" name="up" signature="[F" isStatic="false">
+      <SourceLine classname="Camera" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    </Field>
+    <SourceLine classname="Camera" start="65" end="65" startBytecode="4" endBytecode="4" sourcefile="Camera.java" sourcepath="Camera.java"/>
+    <SourceLine classname="Camera" start="65" end="65" startBytecode="4" endBytecode="4" sourcefile="Camera.java" sourcepath="Camera.java"/>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP2" priority="2" rank="18" abbrev="EI2" category="MALICIOUS_CODE" first="1">
+    <Class classname="Hand">
+      <SourceLine classname="Hand" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Class>
+    <Method classname="Hand" name="setAngles" signature="([F[F[F[F[F[F)V" isStatic="false">
+      <SourceLine classname="Hand" start="93" end="102" startBytecode="0" endBytecode="236" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Method>
+    <Field classname="Hand" name="iAngles" signature="[F" isStatic="false">
+      <SourceLine classname="Hand" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Field>
+    <LocalVariable name="iAngles" register="3" pc="67" role="LOCAL_VARIABLE_NAMED"/>
+    <SourceLine classname="Hand" start="98" end="98" startBytecode="67" endBytecode="67" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    <SourceLine classname="Hand" start="98" end="98" startBytecode="67" endBytecode="67" sourcefile="Hand.java" sourcepath="Hand.java"/>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP2" priority="2" rank="18" abbrev="EI2" category="MALICIOUS_CODE" first="1">
+    <Class classname="Hand">
+      <SourceLine classname="Hand" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Class>
+    <Method classname="Hand" name="setAngles" signature="([F[F[F[F[F[F)V" isStatic="false">
+      <SourceLine classname="Hand" start="93" end="102" startBytecode="0" endBytecode="236" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Method>
+    <Field classname="Hand" name="lAngles" signature="[F" isStatic="false">
+      <SourceLine classname="Hand" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Field>
+    <LocalVariable name="lAngles" register="6" pc="85" role="LOCAL_VARIABLE_NAMED"/>
+    <SourceLine classname="Hand" start="101" end="101" startBytecode="85" endBytecode="85" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    <SourceLine classname="Hand" start="101" end="101" startBytecode="85" endBytecode="85" sourcefile="Hand.java" sourcepath="Hand.java"/>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP2" priority="2" rank="18" abbrev="EI2" category="MALICIOUS_CODE" first="1">
+    <Class classname="Hand">
+      <SourceLine classname="Hand" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Class>
+    <Method classname="Hand" name="setAngles" signature="([F[F[F[F[F[F)V" isStatic="false">
+      <SourceLine classname="Hand" start="93" end="102" startBytecode="0" endBytecode="236" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Method>
+    <Field classname="Hand" name="mAngles" signature="[F" isStatic="false">
+      <SourceLine classname="Hand" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Field>
+    <LocalVariable name="mAngles" register="4" pc="73" role="LOCAL_VARIABLE_NAMED"/>
+    <SourceLine classname="Hand" start="99" end="99" startBytecode="73" endBytecode="73" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    <SourceLine classname="Hand" start="99" end="99" startBytecode="73" endBytecode="73" sourcefile="Hand.java" sourcepath="Hand.java"/>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP2" priority="2" rank="18" abbrev="EI2" category="MALICIOUS_CODE" first="1">
+    <Class classname="Hand">
+      <SourceLine classname="Hand" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Class>
+    <Method classname="Hand" name="setAngles" signature="([F[F[F[F[F[F)V" isStatic="false">
+      <SourceLine classname="Hand" start="93" end="102" startBytecode="0" endBytecode="236" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Method>
+    <Field classname="Hand" name="pAngles" signature="[F" isStatic="false">
+      <SourceLine classname="Hand" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Field>
+    <LocalVariable name="pAngles" register="1" pc="57" role="LOCAL_VARIABLE_NAMED"/>
+    <SourceLine classname="Hand" start="96" end="96" startBytecode="57" endBytecode="57" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    <SourceLine classname="Hand" start="96" end="96" startBytecode="57" endBytecode="57" sourcefile="Hand.java" sourcepath="Hand.java"/>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP2" priority="2" rank="18" abbrev="EI2" category="MALICIOUS_CODE" first="1">
+    <Class classname="Hand">
+      <SourceLine classname="Hand" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Class>
+    <Method classname="Hand" name="setAngles" signature="([F[F[F[F[F[F)V" isStatic="false">
+      <SourceLine classname="Hand" start="93" end="102" startBytecode="0" endBytecode="236" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Method>
+    <Field classname="Hand" name="rAngles" signature="[F" isStatic="false">
+      <SourceLine classname="Hand" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Field>
+    <LocalVariable name="rAngles" register="5" pc="79" role="LOCAL_VARIABLE_NAMED"/>
+    <SourceLine classname="Hand" start="100" end="100" startBytecode="79" endBytecode="79" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    <SourceLine classname="Hand" start="100" end="100" startBytecode="79" endBytecode="79" sourcefile="Hand.java" sourcepath="Hand.java"/>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP2" priority="2" rank="18" abbrev="EI2" category="MALICIOUS_CODE" first="1">
+    <Class classname="Hand">
+      <SourceLine classname="Hand" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Class>
+    <Method classname="Hand" name="setAngles" signature="([F[F[F[F[F[F)V" isStatic="false">
+      <SourceLine classname="Hand" start="93" end="102" startBytecode="0" endBytecode="236" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Method>
+    <Field classname="Hand" name="tAngles" signature="[F" isStatic="false">
+      <SourceLine classname="Hand" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    </Field>
+    <LocalVariable name="tAngles" register="2" pc="62" role="LOCAL_VARIABLE_NAMED"/>
+    <SourceLine classname="Hand" start="97" end="97" startBytecode="62" endBytecode="62" sourcefile="Hand.java" sourcepath="Hand.java"/>
+    <SourceLine classname="Hand" start="97" end="97" startBytecode="62" endBytecode="62" sourcefile="Hand.java" sourcepath="Hand.java"/>
+  </BugInstance>
+  <BugInstance type="DM_DEFAULT_ENCODING" priority="1" rank="19" abbrev="Dm" category="I18N" first="1">
+    <Class classname="SerialReader">
+      <SourceLine classname="SerialReader" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+    </Class>
+    <Method classname="SerialReader" name="initialize" signature="()V" isStatic="false">
+      <SourceLine classname="SerialReader" start="41" end="82" startBytecode="0" endBytecode="501" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+    </Method>
+    <Method classname="java.io.InputStreamReader" name="&lt;init&gt;" signature="(Ljava/io/InputStream;)V" isStatic="false" role="METHOD_CALLED">
+      <SourceLine classname="java.io.InputStreamReader"/>
+    </Method>
+    <SourceLine classname="SerialReader" start="73" end="73" startBytecode="163" endBytecode="163" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+    <SourceLine classname="SerialReader" start="73" end="73" startBytecode="163" endBytecode="163" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+  </BugInstance>
+  <BugInstance type="EI_EXPOSE_REP" priority="2" rank="18" abbrev="EI" category="MALICIOUS_CODE" first="1">
+    <Class classname="SerialReader">
+      <SourceLine classname="SerialReader" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+    </Class>
+    <Method classname="SerialReader" name="read" signature="()[F" isStatic="false">
+      <SourceLine classname="SerialReader" start="123" end="131" startBytecode="0" endBytecode="121" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+    </Method>
+    <Field classname="SerialReader" name="data" signature="[F" isStatic="false">
+      <SourceLine classname="SerialReader" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+    </Field>
+    <SourceLine classname="SerialReader" start="125" end="125" startBytecode="16" endBytecode="16" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+    <SourceLine classname="SerialReader" start="125" end="125" startBytecode="16" endBytecode="16" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+  </BugInstance>
+  <BugInstance type="NP_DEREFERENCE_OF_READLINE_VALUE" priority="2" rank="15" abbrev="NP" category="STYLE" first="1">
+    <Class classname="SerialReader">
+      <SourceLine classname="SerialReader" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+    </Class>
+    <Method classname="SerialReader" name="serialEvent" signature="(Lgnu/io/SerialPortEvent;)V" isStatic="false">
+      <SourceLine classname="SerialReader" start="99" end="120" startBytecode="0" endBytecode="413" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+    </Method>
+    <LocalVariable name="in" register="2" pc="22" role="LOCAL_VARIABLE_VALUE_OF"/>
+    <SourceLine classname="SerialReader" start="104" end="104" startBytecode="24" endBytecode="24" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+    <SourceLine classname="SerialReader" start="104" end="104" startBytecode="24" endBytecode="24" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+  </BugInstance>
+  <BugInstance type="URF_UNREAD_FIELD" priority="2" rank="18" abbrev="UrF" category="PERFORMANCE" first="1">
+    <Class classname="SerialReader">
+      <SourceLine classname="SerialReader" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+    </Class>
+    <Field classname="SerialReader" name="output" signature="Ljava/io/OutputStream;" isStatic="false">
+      <SourceLine classname="SerialReader" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+    </Field>
+    <SourceLine classname="SerialReader" start="74" end="74" startBytecode="180" endBytecode="180" sourcefile="SerialReader.java" sourcepath="SerialReader.java"/>
+  </BugInstance>
+  <Errors errors="0" missingClasses="0"></Errors>
+  <FindBugsSummary timestamp="Wed, 14 Jan 2015 08:18:15 +0800" total_classes="10" referenced_classes="80" total_bugs="14" total_size="588" num_packages="1" java_version="1.7.0_51" vm_version="24.51-b03" cpu_seconds="19.14" clock_seconds="19.65" peak_mbytes="283.10" alloc_mbytes="455.00" gc_seconds="0.39" priority_2="13" priority_1="1">
+    <PackageStats package="" total_bugs="14" total_types="10" total_size="588" priority_2="13" priority_1="1">
+      <ClassStats class="Box" sourceFile="Box.java" interface="false" size="56" bugs="0"/>
+      <ClassStats class="Camera" sourceFile="Camera.java" interface="false" size="56" bugs="4" priority_2="4"/>
+      <ClassStats class="Hand" sourceFile="Hand.java" interface="false" size="169" bugs="6" priority_2="6"/>
+      <ClassStats class="Hand$Finger" sourceFile="Hand.java" interface="false" size="20" bugs="0"/>
+      <ClassStats class="Hand$Side" sourceFile="Hand.java" interface="false" size="12" bugs="0"/>
+      <ClassStats class="MainActivity" sourceFile="MainActivity.java" interface="false" size="23" bugs="0"/>
+      <ClassStats class="MainActivity$1" sourceFile="MainActivity.java" interface="false" size="8" bugs="0"/>
+      <ClassStats class="MainActivity$2" sourceFile="MainActivity.java" interface="false" size="8" bugs="0"/>
+      <ClassStats class="Renderer" sourceFile="Renderer.java" interface="false" size="163" bugs="0"/>
+      <ClassStats class="SerialReader" sourceFile="SerialReader.java" interface="false" size="73" bugs="4" priority_2="3" priority_1="1"/>
+    </PackageStats>
+    <FindBugsProfile>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.ClassDataAnalysisEngine" totalMilliseconds="852" invocations="761" avgMicrosecondsPerInvocation="1120" maxMicrosecondsPerInvocation="58148" standardDeviationMircosecondsPerInvocation="3353"/>
+      <ClassProfile name="de.tobject.findbugs.builder.FindBugs2Eclipse" totalMilliseconds="850" invocations="2" avgMicrosecondsPerInvocation="425207" maxMicrosecondsPerInvocation="536842" standardDeviationMircosecondsPerInvocation="111636"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.ClassInfoAnalysisEngine" totalMilliseconds="534" invocations="759" avgMicrosecondsPerInvocation="703" maxMicrosecondsPerInvocation="49661" standardDeviationMircosecondsPerInvocation="2830"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.FieldItemSummary" totalMilliseconds="406" invocations="80" avgMicrosecondsPerInvocation="5080" maxMicrosecondsPerInvocation="51290" standardDeviationMircosecondsPerInvocation="9804"/>
+      <ClassProfile name="edu.umd.cs.findbugs.OpcodeStack$JumpInfoFactory" totalMilliseconds="233" invocations="263" avgMicrosecondsPerInvocation="886" maxMicrosecondsPerInvocation="9621" standardDeviationMircosecondsPerInvocation="1207"/>
+      <ClassProfile name="edu.umd.cs.findbugs.ba.npe.NullDerefAndRedundantComparisonFinder" totalMilliseconds="203" invocations="64" avgMicrosecondsPerInvocation="3176" maxMicrosecondsPerInvocation="41697" standardDeviationMircosecondsPerInvocation="5893"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.ValueNumberDataflowFactory" totalMilliseconds="200" invocations="72" avgMicrosecondsPerInvocation="2787" maxMicrosecondsPerInvocation="25894" standardDeviationMircosecondsPerInvocation="5585"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.IsNullValueDataflowFactory" totalMilliseconds="157" invocations="64" avgMicrosecondsPerInvocation="2455" maxMicrosecondsPerInvocation="27144" standardDeviationMircosecondsPerInvocation="4225"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.TypeDataflowFactory" totalMilliseconds="152" invocations="71" avgMicrosecondsPerInvocation="2142" maxMicrosecondsPerInvocation="24048" standardDeviationMircosecondsPerInvocation="4436"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.BuildObligationPolicyDatabase" totalMilliseconds="139" invocations="80" avgMicrosecondsPerInvocation="1744" maxMicrosecondsPerInvocation="82425" standardDeviationMircosecondsPerInvocation="9178"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.UnconditionalValueDerefDataflowFactory" totalMilliseconds="129" invocations="64" avgMicrosecondsPerInvocation="2029" maxMicrosecondsPerInvocation="20344" standardDeviationMircosecondsPerInvocation="3408"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.ExplicitSerialization" totalMilliseconds="117" invocations="80" avgMicrosecondsPerInvocation="1472" maxMicrosecondsPerInvocation="75673" standardDeviationMircosecondsPerInvocation="9161"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.NoteDirectlyRelevantTypeQualifiers" totalMilliseconds="112" invocations="80" avgMicrosecondsPerInvocation="1408" maxMicrosecondsPerInvocation="15281" standardDeviationMircosecondsPerInvocation="2897"/>
+      <ClassProfile name="edu.umd.cs.findbugs.classfile.engine.bcel.CFGFactory" totalMilliseconds="108" invocations="64" avgMicrosecondsPerInvocation="1691" maxMicrosecondsPerInvocation="35139" standardDeviationMircosecondsPerInvocation="4445"/>
+      <ClassProfile name="edu.umd.cs.findbugs.detect.FindRefComparison$SpecialTypeAnalysis" totalMilliseconds="95" invocations="50" avgMicrosecondsPerInvocation="1903" maxMicrosecondsPerInvocation="22887" standardDeviationMircosecondsPerInvocation="4035"/>
+    </FindBugsProfile>
+  </FindBugsSummary>
+  <ClassFeatures></ClassFeatures>
+  <History>
+    <AppVersion sequence="0" timestamp="1421194734268" release="" codeSize="0" numClasses="0"/>
+  </History>
+</BugCollection>
