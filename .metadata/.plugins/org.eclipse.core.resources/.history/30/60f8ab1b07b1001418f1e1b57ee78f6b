@@ -1,0 +1,86 @@
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JPanel;
+import javax.swing.Timer;
+
+import com.jogamp.opengl.math.VectorUtil;
+
+/*
+ * TODO:
+ */
+@SuppressWarnings("serial")
+public class KeyboardView extends JPanel implements ActionListener{
+	private static final float OFFSET = 0.4f; //x-offset between rows
+	private static final int RADIUS = 10;
+	private static final int RATIO = 35; //cm to pixel ratio
+	private static final int KEYWIDTH = Math.round(2 * Keyboard.MARGIN * RATIO);
+	private final int KEYNO = 26;
+	private final int[][] KEYPOS = new int[KEYNO][2];
+	private final char[] KEYSEQ = {
+			'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P',
+			'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
+			'Z', 'X', 'C', 'V', 'B', 'N', 'M'
+	};
+	
+	private int width = 10 * KEYWIDTH;
+	private int height = 3 * KEYWIDTH;
+	private int[] pos = {width / 2, height / 2};
+	private Timer timer;
+	
+
+	
+	public KeyboardView(){
+		for (int i = 0; i < KEYNO; i++){
+			if (i < 10){ //First row
+				KEYPOS[i][0] = i * KEYWIDTH;
+				KEYPOS[i][1] = 0;
+			}
+			else if (i < 19){ //Second row
+				KEYPOS[i][0] = Math.round((i - 10 + OFFSET) * KEYWIDTH);
+				KEYPOS[i][1] = KEYWIDTH * 1;
+			}
+			else {
+				KEYPOS[i][0] = Math.round((i - 19 + 2 * OFFSET) * KEYWIDTH);
+				KEYPOS[i][1] = KEYWIDTH * 2;
+			}
+		}
+		setSize(new Dimension(width, height));
+		setPreferredSize(new Dimension(width, height));
+		setBackground(Color.BLACK);
+        timer = new Timer(40, this);
+        timer.setInitialDelay(5);
+        timer.start();	}
+	
+	public void setPos(float[] pos){
+		VectorUtil.addVec2(arg0, arg1, arg2)
+		this.pos[0] = Math.round(pos[0] * RATIO);
+		this.pos[1] = height - Math.round(pos[1] * RATIO);
+	}
+	
+	public void actionPerformed(ActionEvent e){
+		repaint();
+	}		
+	
+	public void paintComponent(Graphics g){
+		super.paintComponent(g);
+		//System.out.println("Paint called!");
+		Graphics2D g2d = (Graphics2D) g;
+		g2d.setColor(Color.WHITE);
+		g2d.setStroke(new BasicStroke(3.0f));
+		for (int i = 0; i < KEYNO; i++){
+			g2d.drawRect(KEYPOS[i][0], KEYPOS[i][1], KEYWIDTH, KEYWIDTH);
+			char[] c = new char[1];
+			c[0] = KEYSEQ[i];
+			g2d.drawChars(c, 0, 1, KEYPOS[i][0] + KEYWIDTH / 4, KEYPOS[i][1] + KEYWIDTH / 4);
+		}
+		g2d.setColor(Color.GRAY);
+		g2d.fillOval(pos[0] - RADIUS, pos[1] - RADIUS, 2 * RADIUS, 2 * RADIUS);
+	}
+	
+}

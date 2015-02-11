@@ -1,7 +1,0 @@
-/*
- * NOTE: Not to be confused with Java Key
- */
-public class Key {
-	private float[] pos = new float[2];
-	private char character = '?';
-}

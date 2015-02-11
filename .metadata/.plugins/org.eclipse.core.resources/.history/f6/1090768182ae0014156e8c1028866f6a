@@ -1,0 +1,32 @@
+
+public class KeyButton {
+	private char character;
+	private float[] position = new float[2];
+	private int index;
+	
+	public KeyButton(char key, int index, float[] keyPos){
+		assert keyPos.length == 2 : "KeyButton() bad input!";
+		character = key;
+		this.index = index;
+		System.arraycopy(keyPos, 0, position, 0, keyPos.length);
+	}
+	
+	public void offset(float[] offset){
+		assert offset.length == 2 : "offset() bad input!";
+		position[0] += offset[0];
+		position[1] += offset[1];
+	}
+	
+	public char getChar(){
+		return character;
+	}
+	
+	public int getIndex(){
+		return index;
+	}
+	
+	public float[] getPos(){
+		return position;
+	}
+	
+}

@@ -1,0 +1,21 @@
+
+public class KeyButton {
+	private char character;
+	private float[] position = new float[2];
+	private int index;
+	
+	public KeyButton(char key, int index, float[] keyPos){
+		assert keyPos.length == 2 : "KeyButton() bad input!";
+		character = key;
+		this.index = index;
+		System.arraycopy(keyPos, 0, position, 0, keyPos.length);
+	}
+	
+	public char getChar(){
+		return character;
+	}
+	
+	public float[] getPos(){
+		return position;
+	}
+}
