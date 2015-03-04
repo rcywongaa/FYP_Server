@@ -3,11 +3,12 @@ import javax.media.opengl.GL2;
 import com.jogamp.opengl.math.Matrix4;
 
 /*
+ * TODO: Fix multiple finger x-positions (Force other fingers to have proper yaw OR 
+ * Change key margin according to finger distance OR
+ * Add offset for finger positions)
  * TODO: Fix thumb (get thumb position)
- * TODO: GUI for showing finger tip position on keyboard
- * TODO: Whole keyboard
- * TODO: Tap detection
  * 
+ * NOTE: Different fingers should have different finger weights
  * NOTE: Roll is forced to 0
  * NOTE: Remember to apply rotations in order of ROLL, PITCH, YAW!
  * NOTE: From sensor, Yaw in clockwise +ve, Pitch upward +ve
@@ -19,14 +20,13 @@ import com.jogamp.opengl.math.Matrix4;
 public class Hand {
 	private static final float THRESH = 0.2f; //Initialization threshold
 	public static final float SCALE = 0.25f; //scales all dimensions
-	public static final float YAWSCALE = 1.3f;
-	private static final float[] ZERO3 = {0.0f, 0.0f, 0.0f};
+	public static final float YAWSCALE = 1.0f;
 	//Hard-coded angle offsets, probably a bad idea...
 	private static final float[] ANGLEOFFSETS = {0.0f, 0.0f, 0.0f};
 	
 	//Right hand, in centimeters
 	//P = Palm, T = Thumb, I = Index, M = Middle, R = Ring, L = Little
-	private static final float[] THUMBWEIGHTS = {1.3f, -0.3f, -0.3f};
+	//private static final float[] THUMBWEIGHTS = {1.3f, -0.3f, -0.3f};
 	private static final float JOINTLENGTH = 0.1f * SCALE;
 	private static final float HANDHEIGHT = 2.0f * SCALE;
 	public static final float FINGERWIDTH = 2.0f * SCALE;
@@ -75,9 +75,7 @@ public class Hand {
 	public boolean isInit(){
 		return isInit;
 	}
-	
-	//Converts angles from radians to degrees
-	//DO NOT CHANGE ORDER (follows sensor ordering: roll, pitch, yaw)
+
 	public void setRadAngles(float[] angles){
 		assert angles.length % 3 == 0 : "setRadAngles() bad input!";
 		angles = alignAxis(angles);
@@ -86,7 +84,7 @@ public class Hand {
 			this.angles[i / 3][i % 3] = angles[i];
 		}
 		//System.out.println(angles[0] + " " + angles[1] + " " + angles[2]);
-		fixYaw();
+		fixAngles();
 		updateMat();
 	}
 	
@@ -109,7 +107,6 @@ public class Hand {
 	 * Ensures that the resultant angles follow OpenGL coordinates
 	 * Device (x, y, z) = Device (Away from pins, right, Into board)
 	 * OpenGL (x, y, z) = (Right of screen, up, Out of screen)
-	 * Device (x, y, z) = Screen (towards, left, down
 	 */
 	private float[] alignAxis(float[] angles){
 		for (int i = 0; i < angles.length; i++){
@@ -129,9 +126,13 @@ public class Hand {
 	
 	/*
 	 * Fix 0 Yaw to point towards +z-axis
-	 * Amplifies yaw changes
+	 * Scale yaw changes
+	 * Fix initial pitch to align
 	 */
-	private void fixYaw(){
+	private void fixAngles(){
+		for (int finger = MIDDLE; finger < FINGERNO; finger++){
+			angles[finger][1] -= initAngles[finger][1] - initAngles[INDEX][1];
+		}
 		for (int finger = 0; finger < FINGERNO; finger++){
 			angles[finger][2] = YAWSCALE * (angles[finger][2] - initAngles[finger][2]);
 		}
@@ -169,34 +170,6 @@ public class Hand {
 		gl.glPopMatrix();
 	}
 	
-	//TODO:
-	private void drawThumb(GL2 gl){
-		//System.out.println(angles[2]);
-		gl.glTranslatef(TBASE[0], TBASE[1], TBASE[2]);
-		//Undo palm rotations
-		gl.glRotatef(-angles[PALM][0], 0, 0, 1);
-		gl.glRotatef(-angles[PALM][1], 1, 0, 0);
-		gl.glRotatef(-angles[PALM][2], 0, 1, 0);
-		
-		gl.glRotatef(angles[THUMB][2], 0, 1, 0); //Angle weights should be applied to yaw for thumb
-		gl.glRotatef(angles[THUMB][1], 1, 0, 0);
-		gl.glRotatef(angles[THUMB][0], 0, 0, 1);
-		gl.glPushMatrix();
-		gl.glScalef(FINGERWIDTH, HANDHEIGHT, TLENGTH[0]);
-		Box.drawDefaultBox(gl);
-		gl.glPopMatrix();
-		gl.glTranslatef(0, 0, TLENGTH[0] + JOINTLENGTH);
-		gl.glPushMatrix();
-		gl.glScalef(FINGERWIDTH, HANDHEIGHT, TLENGTH[1]);
-		Box.drawDefaultBox(gl);
-		gl.glPopMatrix();
-		gl.glTranslatef(0, 0, TLENGTH[1] + JOINTLENGTH);
-		gl.glPushMatrix();
-		gl.glScalef(FINGERWIDTH, HANDHEIGHT, TLENGTH[2]);
-		Box.drawDefaultBox(gl);
-		gl.glPopMatrix();
-	}
-		
 	/*
 	 * NOTE: drawPalm applies roll while drawFinger does NOT
 	 * NOTE: drawPalm does NOT apply ANGLEWEIGHTS
@@ -212,9 +185,34 @@ public class Hand {
 		gl.glPopMatrix();
 	}
 	
-	/*
-	 *  NOTE: Matrix4.rotate uses radians!
-	 */
+	//TODO:
+	private void drawThumb(GL2 gl){
+		//System.out.println(angles[2]);
+		gl.glTranslatef(BASES[THUMB][0], BASES[THUMB][1], BASES[THUMB][2]);
+		//Undo palm rotations
+		gl.glRotatef(-angles[PALM][0], 0, 0, 1);
+		gl.glRotatef(-angles[PALM][1], 1, 0, 0);
+		gl.glRotatef(-angles[PALM][2], 0, 1, 0);
+		
+		gl.glRotatef(angles[THUMB][2], 0, 1, 0); //Angle weights should be applied to yaw for thumb
+		gl.glRotatef(angles[THUMB][1], 1, 0, 0);
+		gl.glRotatef(angles[THUMB][0], 0, 0, 1);
+		gl.glPushMatrix();
+		gl.glScalef(FINGERWIDTH, HANDHEIGHT, TLENGTH[0]);
+		Box.drawDefaultBox(gl);
+		gl.glPopMatrix();
+		gl.glTranslatef(0, 0, LENGTHS[THUMB][0] + JOINTLENGTH);
+		gl.glPushMatrix();
+		gl.glScalef(FINGERWIDTH, HANDHEIGHT, TLENGTH[1]);
+		Box.drawDefaultBox(gl);
+		gl.glPopMatrix();
+		gl.glTranslatef(0, 0, LENGTHS[THUMB][1] + JOINTLENGTH);
+		gl.glPushMatrix();
+		gl.glScalef(FINGERWIDTH, HANDHEIGHT, TLENGTH[2]);
+		Box.drawDefaultBox(gl);
+		gl.glPopMatrix();
+	}
+	
 	private void drawFinger(GL2 gl, int finger){
 		//assert offset.length == 3 : "drawFinger() bad input!";
 		assert finger < FINGERNO : "drawFinger() bad input!";
@@ -254,6 +252,9 @@ public class Hand {
 		gl.glPopMatrix();
 	}
 	
+	/*
+	 *  NOTE: Matrix4.rotate uses radians!
+	 */
 	private synchronized void updateMat(){
 		for (int i = 0; i < FINGERNO; i++){
 			mat[i] = new Matrix4();
@@ -261,7 +262,6 @@ public class Hand {
 		}
 		
 		for (int finger = 0; finger < FINGERNO; finger++){
-			if (finger == THUMB) continue; //Skip thumb here
 			//drawPalm() transforms
 			mat[finger].translate(PBASE[0], PBASE[1], PBASE[2]);
 			mat[finger].rotate(degToRad(angles[PALM][2]), 0, 1, 0);
@@ -274,6 +274,17 @@ public class Hand {
 			mat[finger].rotate(degToRad(-angles[PALM][0]), 0, 0, 1);
 			mat[finger].rotate(degToRad(-angles[PALM][1]), 1, 0, 0);
 			mat[finger].rotate(degToRad(-angles[PALM][2]), 0, 1, 0);
+			
+			if (finger == THUMB) {
+				mat[finger].rotate(degToRad(angles[finger][2]), 0, 1, 0);
+				mat[finger].rotate(degToRad(angles[finger][1]), 1, 0, 0);
+				mat[finger].rotate(degToRad(angles[finger][0]), 0, 0, 1);
+
+				mat[finger].translate(0, 0, LENGTHS[finger][0] + JOINTLENGTH);
+				mat[finger].translate(0, 0, LENGTHS[finger][1] + JOINTLENGTH);
+				mat[finger].scale(WIDTHS[finger], HANDHEIGHT, LENGTHS[finger][2]);
+				continue; //Skip thumb here
+			}
 			
 			mat[finger].rotate(degToRad(angles[finger][2]), 0, 1, 0);
 			mat[finger].rotate(degToRad(angles[finger][1] * getAngleWeight(finger, 0)), 1, 0, 0);
@@ -294,7 +305,6 @@ public class Hand {
 		//Try y = x^2
 		assert finger < FINGERNO : "getAngleWeight() bad input!";
 		assert joint < 3 : "getAngleWeight() bad input!";
-		//TODO:
 		switch (joint){
 		case 0:
 			return 0;
@@ -306,8 +316,8 @@ public class Hand {
 			else if (angles[finger][1] > 80.0f)
 				return 0.8f;
 			else
-				//return (float) Math.pow((angles[finger][1] - 30.0f) / 40.0f, 2.0f);
-				return ((angles[finger][1] - 40.0f) / 40.0f) * 0.8f;
+				return (float) Math.pow((angles[finger][1] - 40.0f) / 40.0f, 2.0f) * 0.8f;
+				//return ((angles[finger][1] - 40.0f) / 40.0f) * 0.8f;
 				
 		}
 		System.err.println("getAngleWeight() error...");
@@ -339,6 +349,14 @@ public class Hand {
 		coord[1] = pos[2] / SCALE;
 		//System.out.println(coord[0] + " " + coord[1]);
 		return coord;
+	}
+	
+	public float[][] getXYCoord(){
+		float[][] coords = new float[FINGERNO][2];
+		for (int i = 0; i < FINGERNO; i++){
+			System.arraycopy(getXYCoord(i), 0, coords[i], 0, coords[i].length);
+		}
+		return coords;
 	}
 	
 	public float radToDeg(float rad){

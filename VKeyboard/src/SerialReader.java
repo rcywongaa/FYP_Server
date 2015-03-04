@@ -29,13 +29,12 @@ public class SerialReader implements SerialPortEventListener {
 	/** Milliseconds to block while waiting for port open */
 	private static final int TIME_OUT = 2000;
 	/** Default bits per second for COM port. */
+	
 	//Common baud rates: 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, or 115200
-	private static final int DATA_RATE = 14400; //Recommended 14400
-	
-	private boolean dataReady = false;
-	/***********************************************************/
-	
-	private float[] data = new float[MainActivity.SENSORCOUNT*3]; //3 values per sensor
+	public final int DATA_RATE = 14400; //Recommended 14400
+	public final int DATALENGTH = MainActivity.SENSORCOUNT*3;
+	private boolean dataReady = false;	
+	private float[] data = new float[DATALENGTH]; //3 values per sensor
 	
 	public void initialize() {
 		CommPortIdentifier portId = null;

@@ -1,0 +1,162 @@
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.swing.JPanel;
+import javax.swing.Timer;
+
+import com.jogamp.opengl.math.VectorUtil;
+
+/*
+ */
+public class Keyboard {
+	public static final float MARGIN = 1.0f; //Hand.FINGERWIDTH / Hand.SCALE;
+	private final float OFFSET = 0.4f; //x-offset between rows
+	/*
+	 * Positions relative to J key (0, 0)
+	 * In centimeters
+	 */
+	public final float[] JREL = {0, 0};
+	public final float[] UREL = {-OFFSET * 2 * MARGIN, MARGIN * 2};
+	public final float[] MREL = {OFFSET * 2 * MARGIN, -MARGIN * 2};
+	public final float[] HREL = {-MARGIN * 2, 0};
+	public final float[] YREL = {UREL[0] - MARGIN * 2, UREL[1]};
+	public final float[] NREL = {MREL[0] - MARGIN * 2, MREL[1]};
+	
+	private HashMap<Character, float[]> keyboard = new HashMap<Character, float[]>();
+	private boolean isInit = false;
+	private KeyboardView view;
+	
+	public Keyboard(){
+		keyboard.put('Y', YREL);
+		keyboard.put('U', UREL);
+		keyboard.put('H', HREL);
+		keyboard.put('J', JREL);
+		keyboard.put('N', NREL);
+		keyboard.put('M', MREL);
+		view = new KeyboardView();
+	}
+	
+	public void initJPos(float[] jPos){
+		assert jPos.length == 2  : "initJPos() bad input!";
+		assert isInit == false : "Re-Initiation!";
+		
+		for (Character c : keyboard.keySet()){
+			keyboard.put(c, VectorUtil.addVec2(new float[2], keyboard.get(c), jPos)); 
+		}
+		isInit = true;
+	}
+	
+	public char getKey(float[] pos){
+		assert isInit == true : "Not initialized yet!";
+		assert pos.length == 2 : "getKey() bad input!";
+		view.setPos(pos);
+		for (Character c : keyboard.keySet()){
+			float[] keyPos = keyboard.get(c);
+			if (Math.abs(keyPos[0] - pos[0]) < MARGIN && Math.abs(keyPos[1] - pos[1]) < MARGIN ){
+				System.out.println(c);
+				return c;
+			}
+		}
+		//System.out.println('?');
+		return '?';
+	}
+	
+	public boolean isInit(){
+		return isInit;
+	}
+	
+	public KeyboardView getView(){
+		return view;
+	}
+	
+	
+	/*
+	 * NOTE: All units are in pixels here
+	 */
+	@SuppressWarnings("serial")
+	class KeyboardView extends JPanel implements ActionListener{
+		private final int RADIUS = 10;
+		private final int RATIO = 35; //cm to pixel ratio
+		private final int KEYWIDTH = Math.round(2 * Keyboard.MARGIN * RATIO);
+		private final int KEYNO = 26;
+		private final int[][] KEYPOS = new int[KEYNO][2];
+		private final char[] KEYSEQ = {
+				'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P',
+				'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
+				'Z', 'X', 'C', 'V', 'B', 'N', 'M'
+		};
+		private final int JINDEX = 16;
+		
+		private int width = 10 * KEYWIDTH;
+		private int height = 3 * KEYWIDTH;
+		private int[] pos = {width / 2, height / 2};
+		private Timer timer;
+		private char currKey = '?';
+
+		
+		public KeyboardView(){
+			for (int i = 0; i < KEYNO; i++){
+				if (i < 10){ //First row
+					KEYPOS[i][0] = i * KEYWIDTH;
+					KEYPOS[i][1] = 0;
+				}
+				else if (i < 19){ //Second row
+					KEYPOS[i][0] = Math.round((i - 10 + OFFSET) * KEYWIDTH);
+					KEYPOS[i][1] = KEYWIDTH * 1;
+				}
+				else {
+					KEYPOS[i][0] = Math.round((i - 19 + 2 * OFFSET) * KEYWIDTH);
+					KEYPOS[i][1] = KEYWIDTH * 2;
+				}
+			}
+			setSize(new Dimension(width, height));
+			setPreferredSize(new Dimension(width, height));
+			setBackground(Color.BLACK);
+	        timer = new Timer(40, this);
+	        timer.setInitialDelay(5);
+	        timer.start();	}
+		
+		public void setPos(float[] pos){
+			//currKey = getKey(pos);
+			float[] delta = new float[2];
+			float[] jPos = new float[2];
+			System.arraycopy(keyboard.get('J'), 0, jPos, 0, jPos.length);
+			VectorUtil.scaleVec2(jPos, jPos, -1);
+			VectorUtil.addVec2(delta, pos, jPos);
+			this.pos[0] = Math.round(delta[0] * RATIO) + KEYPOS[JINDEX][0] + KEYWIDTH / 2;
+			this.pos[1] = -Math.round(delta[1] * RATIO) + KEYPOS[JINDEX][1] + KEYWIDTH / 2;
+		}
+		
+		public void actionPerformed(ActionEvent e){
+			repaint();
+		}		
+		
+		public void paintComponent(Graphics g){
+			super.paintComponent(g);
+			Graphics2D g2d = (Graphics2D) g;
+			g2d.setColor(Color.WHITE);
+			g2d.setStroke(new BasicStroke(3.0f));
+			for (int i = 0; i < KEYNO; i++){
+				char[] c = new char[1];
+				c[0] = KEYSEQ[i];
+				g2d.drawChars(c, 0, 1, KEYPOS[i][0] + KEYWIDTH / 4, KEYPOS[i][1] + KEYWIDTH / 4);
+				if (currKey == KEYSEQ[i]){
+					g2d.setColor(Color.GRAY);
+					g2d.fillRect(KEYPOS[i][0], KEYPOS[i][1], KEYWIDTH, KEYWIDTH);
+				}
+				else g2d.drawRect(KEYPOS[i][0], KEYPOS[i][1], KEYWIDTH, KEYWIDTH);
+			}
+			g2d.setColor(Color.GRAY);
+			g2d.fillOval(pos[0] - RADIUS, pos[1] - RADIUS, 2 * RADIUS, 2 * RADIUS);
+		}
+		
+	}
+
+}
