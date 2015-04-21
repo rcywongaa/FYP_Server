@@ -1,0 +1,216 @@
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.Arrays;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.swing.JFrame;
+ 
+/*
+ * TODO: Second hand
+ * TODO: Bluetooth connection
+ * TODO: Implement proper filter (raw data for tap detection, filtered data for angles)
+ * TODO: Handle unlikely finger initiations
+ * 
+ * Procedures:
+ * 1: Initialize forward position of all fingers
+ * 2: Initialize J, K, L, ; positions (right hand)
+ * 
+ * NOTE: Size of raw data = (3 Axis * 3 Sensors * SENSORCOUNT * 32bit float) 
+ * NOTE: Keyboard.FINGERNO (excludes palm) != Hand.FINGERNO (includes palm)
+ */
+
+public class MainActivity 
+{
+	/************************* IMPORTANT SETTINGS ************************/
+	public static final boolean HASMOUSE = true;
+	public static final boolean HASLEFT = true;
+	public static final boolean HASBLUETOOTH = false;  //Remember to disconnect BT
+	/*
+	 * Serial Port: COM6, COM14
+	 * USB Port: COM11 (unusable)
+	 */
+	private static final String PORT1 = "COM6";
+	private static final String PORT2 = "COM15";
+	private static final String BT1 = "RIGHTHAND";
+	private static final String BT2 = "LEFTHAND";
+	
+	/********************************************************************/
+	
+	public static final int INITTIME = 3000; //ms
+	public static final int SENSORCOUNT = 6;
+	public static final int READRATE = 1; //ms
+	final static ScheduledExecutorService SCHEDULER = Executors.newScheduledThreadPool(1);
+	private final static int RIGHT = 0;
+	private final static int LEFT = 1;
+	public final static int DATALENGTH = SENSORCOUNT * 4 - 1 + 2;  //SensorCount * (3 angles + 1 tap) - palm tap + 2 displacement
+	private static CommReader reader[] = null;
+	private static ReadRunnable readRunner = null;
+	private static Renderer rRenderer = null;
+	private static Renderer lRenderer = null;
+	private static Keyboard keyboard = null;
+	//private static Object lock = new Object();
+	
+    public static void main(String[] args) 
+    {
+    	if (HASLEFT){
+    		if (HASBLUETOOTH){
+    			reader = new BTReader[2];
+    			reader[RIGHT] = new BTReader(BT1);
+    			reader[LEFT] = new BTReader(BT2);
+    		} else {
+    			reader = new SerialReader[2];
+    			reader[RIGHT] = new SerialReader(PORT1);
+    			reader[LEFT] = new SerialReader(PORT2);
+    		}
+       		reader[RIGHT].initialize(false);
+   			reader[LEFT].initialize(false);
+    	} else {
+    		reader = (HASBLUETOOTH ? new BTReader[1] : new SerialReader[1]);
+    		reader[RIGHT] = (HASBLUETOOTH ? new BTReader(BT1) : new SerialReader(PORT1));
+    		reader[RIGHT].initialize(false);
+    	}
+    	
+   		rRenderer = new Renderer();
+    	readRunner = new ReadRunnable();
+        
+        JFrame rHandFrame = new JFrame( "Right Hand Model" );
+        rHandFrame.getContentPane().add( rRenderer.getCanvas());
+        rHandFrame.setSize( rHandFrame.getContentPane().getPreferredSize() );
+        rHandFrame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent ev) {
+            	for (int i = 0; i < reader.length; i++)
+            		reader[i].close();
+            	System.exit(0);
+            }
+        });
+        rHandFrame.setVisible( true );
+        
+        if (HASLEFT){
+        	lRenderer = new Renderer();
+        	JFrame lHandFrame = new JFrame( "Right Hand Model" );
+			lHandFrame.getContentPane().add( rRenderer.getCanvas());
+			lHandFrame.setSize( lHandFrame.getContentPane().getPreferredSize() );
+			lHandFrame.addWindowListener(new WindowAdapter() {
+				public void windowClosing(WindowEvent ev) {
+					for (int i = 0; i < reader.length; i++)
+						reader[i].close();
+			     	System.exit(0);
+			     }
+			 });
+			 lHandFrame.setVisible( true );
+        }
+        
+        for (int i = 0; i < reader.length; i++){ //Ensure reader has begun receiving valid data
+        	while (!reader[i].isReady());
+        }
+        
+        System.out.println("Initializing right hand forward...");
+        while (rRenderer.getHand().isInit() == false){
+        	DataSet data = getData(RIGHT);
+         	System.out.println(Arrays.toString(data.getAngles()));
+        	rRenderer.getHand().initRadAngles(Hand.Side.RIGHT, data.getAngles());
+			try {
+				Thread.sleep(READRATE);
+			} catch (InterruptedException e) {
+				System.out.println("initRadAngles() sleep fail!");
+				e.printStackTrace();
+			}
+        }
+        
+        if (HASLEFT){
+            System.out.println("Initializing left hand forward...");
+        	 while (rRenderer.getHand().isInit() == false){
+             	DataSet data = getData(LEFT);
+             	rRenderer.getHand().initRadAngles(Hand.Side.LEFT, data.getAngles());
+     			try {
+     				Thread.sleep(READRATE);
+     			} catch (InterruptedException e) {
+     				System.out.println("initRadAngles() sleep fail!");
+     				e.printStackTrace();
+     			}
+             }
+    	}
+        
+        while (keyboard == null || keyboard.isInit() == false){
+        	if (!HASLEFT){
+        		System.out.println("Initializing 'J', 'K', 'L', ';' positions...");
+        		DataSet data = getData(RIGHT);
+        		rRenderer.getHand().setRadAngles(data.getAngles());
+        		keyboard = new Keyboard(rRenderer.getHand().getXYCoord(), null);
+        	}
+        	else {
+        		System.out.println("Initializing 'J', 'K', 'L', ';' and 'F', 'D', 'S', 'A' positions...");
+        		DataSet rData = getData(RIGHT);
+            	DataSet lData = getData(LEFT);
+            	rRenderer.getHand().setRadAngles(rData.getAngles());
+            	rRenderer.getLHand().setRadAngles(lData.getAngles());
+            	keyboard = new Keyboard(rRenderer.getHand().getXYCoord(), rRenderer.getLHand().getXYCoord());
+        	}
+        	try {
+				Thread.sleep(READRATE);
+			} catch (InterruptedException e) {
+				System.out.println("Keyboard() sleep fail!");
+				e.printStackTrace();
+			}
+        }
+        
+        System.out.println("Initialization complete!");
+
+        SCHEDULER.scheduleAtFixedRate(readRunner, 1000, READRATE, TimeUnit.MILLISECONDS);
+
+        JFrame keyboardFrame = new JFrame("Keyboard View");
+        keyboardFrame.setUndecorated(true);
+		keyboardFrame.getContentPane().add(keyboard.getView());
+		keyboardFrame.pack();
+        keyboardFrame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent ev) {
+                System.exit(0);
+            }
+        });
+        keyboardFrame.setResizable(false);
+        keyboardFrame.setVisible(true);
+    }
+
+    public static DataSet getData(int i){
+    	assert i == RIGHT || (HASLEFT && i == LEFT) : "getData() bad input!";
+    	//while (!reader[i].isReady());
+    	return reader[i].read();
+    }
+    
+    //FIXME: Rapid reading duplicates error
+    //TODO: Change for 2 hands
+    private static class ReadRunnable implements Runnable {
+    	public void run(){
+			if (true){
+				DataSet data = reader[RIGHT].read();
+				rRenderer.getHand().setRadAngles(data.getAngles());
+				rRenderer.getHand().setPalmPos(data.getPalmPos());
+				float[][] fingerPos = new float[Keyboard.FINGERNO][2];
+				for (int i = Keyboard.THUMB; i < Keyboard.FINGERNO; i++){
+					fingerPos[i] = rRenderer.getHand().getXYCoord(i + 1); //due to inconsistent finger indices
+				}
+				keyboard.getView().setPos(fingerPos, true);
+				keyboard.getView().setTap(data.getTaps(), true);
+			}
+			//else System.out.println("Redundant reads...");
+			
+			if (HASLEFT){
+				DataSet data = reader[LEFT].read();
+				rRenderer.getLHand().setRadAngles(data.getAngles());
+				rRenderer.getLHand().setPalmPos(data.getPalmPos());
+				float[][] fingerPos = new float[Keyboard.FINGERNO][2];
+				for (int i = Keyboard.THUMB; i < Keyboard.FINGERNO; i++){
+					fingerPos[i] = rRenderer.getLHand().getXYCoord(i + 1);
+				}
+				keyboard.getView().setPos(fingerPos, false);
+				keyboard.getView().setTap(data.getTaps(), false);
+			}
+		}
+    }
+    
+//    public static Object getLock(){
+//    	return lock;
+//    }
+}

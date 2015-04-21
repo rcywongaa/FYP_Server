@@ -1,0 +1,30 @@
+import java.io.IOException;
+
+import javax.bluetooth.UUID;
+import javax.microedition.io.Connector;
+import javax.microedition.io.StreamConnection;
+import javax.microedition.io.StreamConnectionNotifier;
+
+
+public class BTReader {
+	public BTReader(){
+    	UUID uuid = new UUID("1101", true);
+    	String connectionString = "btspp://localhost:" + uuid +";name=Sample SPP Server";
+    	StreamConnectionNotifier streamConnNotifier;
+		try {
+			streamConnNotifier = (StreamConnectionNotifier)Connector.open( connectionString );
+		} catch (IOException e) {
+			System.out.println("Connector.open() failed!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+    	try {
+			StreamConnection connection=streamConnNotifier.acceptAndOpen();
+		} catch (IOException e) {
+			System.out.println("streamConnNotifier.acceptAndOpen() failed!");
+			e.printStackTrace();
+		}
+
+
+	}
+}

@@ -1,13 +1,13 @@
+import java.util.Arrays;
+
 import javax.media.opengl.GL2;
 
 import com.jogamp.opengl.math.Matrix4;
 
 /*
- * TODO: Fix multiple finger x-positions (Force other fingers to have proper yaw OR 
- * Change key margin according to finger distance OR
- * Add offset for finger positions)
  * TODO: Fix thumb (get thumb position)
  * 
+ * NOTE: Initial finger positions are aligned by position offset
  * NOTE: Different fingers should have different finger weights
  * NOTE: Roll is forced to 0
  * NOTE: Remember to apply rotations in order of ROLL, PITCH, YAW!
@@ -15,36 +15,38 @@ import com.jogamp.opengl.math.Matrix4;
  * NOTE: Matrix4.rotate() uses radians while glRotatef() uses degrees
  * NOTE: Final arrays are NOT immutable
  * NOTE: drawHand() and updateMat() are called at different rates
+ * NOTE: arrays are references...
  */
 
 public class Hand {
-	private static final float THRESH = 0.2f; //Initialization threshold
-	public static final float SCALE = 0.25f; //scales all dimensions
-	public static final float YAWSCALE = 1.0f;
+	private final float THRESH = 0.2f; //Initialization threshold
+	public final float SCALE = 0.25f; //scales all dimensions
+	private final float MOUSESCALE = 0.00025f; //4000 = 1cm
+	public final float YAWSCALE = 1.0f;
 	//Hard-coded angle offsets, probably a bad idea...
-	private static final float[] ANGLEOFFSETS = {0.0f, 0.0f, 0.0f};
+	private final float[] ANGLEOFFSETS = {0.0f, 0.0f, 0.0f};
 	
 	//Right hand, in centimeters
 	//P = Palm, T = Thumb, I = Index, M = Middle, R = Ring, L = Little
-	//private static final float[] THUMBWEIGHTS = {1.3f, -0.3f, -0.3f};
-	private static final float JOINTLENGTH = 0.1f * SCALE;
-	private static final float HANDHEIGHT = 2.0f * SCALE;
-	public static final float FINGERWIDTH = 2.0f * SCALE;
-	private static final float[] PBASE = {0.0f * SCALE, 0.0f * SCALE, 0.0f * SCALE};
-	private static final float[] PLENGTH = {11.0f * SCALE, 0.0f, 0.0f};
-	private static final float PWIDTH = 10.0f * SCALE;
+	//private final float[] THUMBWEIGHTS = {1.3f, -0.3f, -0.3f};
+	private final float JOINTLENGTH = 0.1f * SCALE;
+	private final float HANDHEIGHT = 2.0f * SCALE;
+	public final float FINGERWIDTH = 2.0f * SCALE;
+	private final float[] PBASE = {0.0f * SCALE, 0.0f * SCALE, 0.0f * SCALE};
+	private final float[] PLENGTH = {11.0f * SCALE, 0.0f, 0.0f};
+	private final float PWIDTH = 10.0f * SCALE;
 	//Lengths: 0 = proximal, 1 = intermediate, 2 = distal
 	//Bases: 0 = x, 1 = y, 2 = z
-	private static final float[] TBASE = {PWIDTH / 2 - 1.0f * SCALE, 0.0f, 0.0f}; //Note that PALMWIDTH is already scaled
-	private static final float[] TLENGTH = {6.0f * SCALE, 4.0f * SCALE, 4.0f * SCALE};
-	private static final float[] IBASE = {4.0f * SCALE, 0.0f, PLENGTH[0] + JOINTLENGTH};
-	private static final float[] ILENGTH = {5.0f * SCALE, 2.5f * SCALE, 3.0f * SCALE};
-	private static final float[] MBASE = {1.25f * SCALE, 0.0f, PLENGTH[0] + JOINTLENGTH};
-	private static final float[] MLENGTH = {5.0f * SCALE, 3.0f * SCALE, 3.0f * SCALE};
-	private static final float[] RBASE = {-1.25f * SCALE, 0.0f, PLENGTH[0] + JOINTLENGTH};
-	private static final float[] RLENGTH = {5.0f * SCALE, 2.5f * SCALE, 3.0f * SCALE};
-	private static final float[] LBASE = {-4.0f * SCALE, 0.0f, PLENGTH[0] + JOINTLENGTH};
-	private static final float[] LLENGTH = {3.0f * SCALE, 2.0f * SCALE, 3.0f * SCALE};
+	private final float[] TBASE = {PWIDTH / 2 - 1.0f * SCALE, 0.0f, 0.0f}; //Note that PALMWIDTH is already scaled
+	private final float[] TLENGTH = {6.0f * SCALE, 4.0f * SCALE, 4.0f * SCALE};
+	private final float[] IBASE = {4.0f * SCALE, 0.0f, PLENGTH[0] + JOINTLENGTH};
+	private final float[] ILENGTH = {5.0f * SCALE, 2.5f * SCALE, 3.0f * SCALE};
+	private final float[] MBASE = {1.25f * SCALE, 0.0f, PLENGTH[0] + JOINTLENGTH};
+	private final float[] MLENGTH = {5.0f * SCALE, 3.0f * SCALE, 3.0f * SCALE};
+	private final float[] RBASE = {-1.25f * SCALE, 0.0f, PLENGTH[0] + JOINTLENGTH};
+	private final float[] RLENGTH = {5.0f * SCALE, 2.5f * SCALE, 3.0f * SCALE};
+	private final float[] LBASE = {-4.0f * SCALE, 0.0f, PLENGTH[0] + JOINTLENGTH};
+	private final float[] LLENGTH = {3.0f * SCALE, 2.0f * SCALE, 3.0f * SCALE};
 	
 	public static final int ROLL = 0;
 	public static final int PITCH = 1;
@@ -56,24 +58,35 @@ public class Hand {
 	public static final int RING = 4;
 	public static final int LITTLE = 5;
 	public static final int FINGERNO = 6;
-	private static final float[][] LENGTHS = {PLENGTH, TLENGTH, ILENGTH, MLENGTH, RLENGTH, LLENGTH};
-	private static final float[][] BASES = {PBASE, TBASE, IBASE, MBASE, RBASE, LBASE};
-	private static final float[] WIDTHS = {PWIDTH, FINGERWIDTH, FINGERWIDTH, FINGERWIDTH, FINGERWIDTH, FINGERWIDTH};
+	private final float[][] LENGTHS = {PLENGTH, TLENGTH, ILENGTH, MLENGTH, RLENGTH, LLENGTH};
+	private final float[] WIDTHS = {PWIDTH, FINGERWIDTH, FINGERWIDTH, FINGERWIDTH, FINGERWIDTH, FINGERWIDTH};
 	
-	Side side;
-	private float[][] angles = new float[6][3];
-	private float[][] initAngles = new float[6][3];
+	private float[][] basePos = {PBASE, TBASE, IBASE, MBASE, RBASE, LBASE};  //Pointers!!!
+	private float[][] initAngles = new float[FINGERNO][3];
+	private float[][] angles = new float[FINGERNO][3];
 	private boolean isInit = false;
 	//Note that creating an array of objects does NOT call the constructors
 	private Matrix4[] mat = new Matrix4[FINGERNO]; //Keeps track of each finger's transform matrix
 	
-	static enum Side {
-		LEFT, 
-		RIGHT
+	public Hand(){
+		for (float[] row : initAngles){
+			Arrays.fill(row, 0.0f);
+		}
+
+		for (float[] row : angles){
+			Arrays.fill(row, 0.0f);
+		}
 	}
 
 	public boolean isInit(){
 		return isInit;
+	}
+	
+	public void setPalmPos(float[] pos){
+		assert pos.length == 2 : "setPalmPos() bad input!";
+		basePos[PALM][0] += -pos[0] * MOUSESCALE * SCALE; //OpenGL hand is facing screen
+		basePos[PALM][2] += -pos[1] * MOUSESCALE * SCALE;
+		//System.out.println(basePos[PALM][0] + " " + basePos[PALM][1]);
 	}
 
 	public void setRadAngles(float[] angles){
@@ -88,19 +101,24 @@ public class Hand {
 		updateMat();
 	}
 	
-	public void initRadAngles(Side side, float[] angles){
+	public void initRadAngles(int side, float[] angles){
 		assert isInit == false : "Re-initiation";
 		assert angles.length % 3 == 0 : "initRadAngles() bad input!";
-		this.side = side;
 		isInit = true;
 		angles = alignAxis(angles);
 		for (int i = 0; i < angles.length; i++){
 			angles[i] = radToDeg(angles[i]) + ANGLEOFFSETS[i % 3];
+			initAngles[i / 3][i % 3] = angles[i];
 			if (Math.abs(angles[i] - initAngles[i / 3][i % 3]) > THRESH){
 				isInit = false;
+				return;
 			}
-			initAngles[i / 3][i % 3] = angles[i];
-		}	
+		}
+		if (side == MainActivity.LEFT){ //Flip finger positions for left hand
+			for (int i = 0; i < basePos.length; i++){
+				basePos[i][0] *= -1;
+			}
+		}
 	}
 	
 	/*
@@ -131,7 +149,7 @@ public class Hand {
 	 */
 	private void fixAngles(){
 		for (int finger = MIDDLE; finger < FINGERNO; finger++){
-			angles[finger][1] -= initAngles[finger][1] - initAngles[INDEX][1];
+			//angles[finger][1] -= initAngles[finger][1] - initAngles[INDEX][1];
 		}
 		for (int finger = 0; finger < FINGERNO; finger++){
 			angles[finger][2] = YAWSCALE * (angles[finger][2] - initAngles[finger][2]);
@@ -141,31 +159,29 @@ public class Hand {
 	public void drawHand(GL2 gl)
 	{
 		gl.glPushMatrix();
-				
-		if (side == Side.RIGHT){
-			//draw palm
-			drawPalm(gl);
+		
+		//draw palm
+		drawPalm(gl);
 
-			gl.glPushMatrix();
-			drawThumb(gl);
-			gl.glPopMatrix();
-			
-			gl.glPushMatrix();
-			drawFinger(gl, INDEX);
-			gl.glPopMatrix();
-			
-			gl.glPushMatrix();
-			drawFinger(gl, MIDDLE);
-			gl.glPopMatrix();
-			
-			gl.glPushMatrix();
-			drawFinger(gl, RING);
-			gl.glPopMatrix();
-			
-			gl.glPushMatrix();
-			//drawFinger(gl, LITTLE);
-			gl.glPopMatrix();
-		}
+		gl.glPushMatrix();
+		drawThumb(gl);
+		gl.glPopMatrix();
+		
+		gl.glPushMatrix();
+		drawFinger(gl, INDEX);
+		gl.glPopMatrix();
+		
+		gl.glPushMatrix();
+		drawFinger(gl, MIDDLE);
+		gl.glPopMatrix();
+		
+		gl.glPushMatrix();
+		drawFinger(gl, RING);
+		gl.glPopMatrix();
+		
+		gl.glPushMatrix();
+		drawFinger(gl, LITTLE);
+		gl.glPopMatrix();
 		
 		gl.glPopMatrix();
 	}
@@ -175,7 +191,7 @@ public class Hand {
 	 * NOTE: drawPalm does NOT apply ANGLEWEIGHTS
 	 */
 	private void drawPalm(GL2 gl){
-		gl.glTranslatef(PBASE[0], PBASE[1], PBASE[2]);
+		gl.glTranslatef(basePos[PALM][0], basePos[PALM][1], basePos[PALM][2]);
 		gl.glRotatef(angles[PALM][2], 0, 1, 0);
 		gl.glRotatef(angles[PALM][1], 1, 0, 0);
 		gl.glRotatef(angles[PALM][0], 0, 0, 1);
@@ -188,7 +204,7 @@ public class Hand {
 	//TODO:
 	private void drawThumb(GL2 gl){
 		//System.out.println(angles[2]);
-		gl.glTranslatef(BASES[THUMB][0], BASES[THUMB][1], BASES[THUMB][2]);
+		gl.glTranslatef(basePos[THUMB][0], basePos[THUMB][1], basePos[THUMB][2]);
 		//Undo palm rotations
 		gl.glRotatef(-angles[PALM][0], 0, 0, 1);
 		gl.glRotatef(-angles[PALM][1], 1, 0, 0);
@@ -219,7 +235,7 @@ public class Hand {
 		assert finger != THUMB : "Use drawThumb() function!";
 		assert finger != PALM : "Use drawPalm() function!";
 		
-		gl.glTranslatef(BASES[finger][0], BASES[finger][1], BASES[finger][2]);
+		gl.glTranslatef(basePos[finger][0], basePos[finger][1], basePos[finger][2]);
 		//Undo palm rotations
 		gl.glRotatef(-angles[PALM][0], 0, 0, 1);
 		gl.glRotatef(-angles[PALM][1], 1, 0, 0);
@@ -253,7 +269,7 @@ public class Hand {
 	}
 	
 	/*
-	 *  NOTE: Matrix4.rotate uses radians!
+	 * NOTE: Matrix4.rotate uses radians!
 	 */
 	private synchronized void updateMat(){
 		for (int i = 0; i < FINGERNO; i++){
@@ -263,13 +279,13 @@ public class Hand {
 		
 		for (int finger = 0; finger < FINGERNO; finger++){
 			//drawPalm() transforms
-			mat[finger].translate(PBASE[0], PBASE[1], PBASE[2]);
+			mat[finger].translate(basePos[PALM][0], basePos[PALM][1], basePos[PALM][2]);
 			mat[finger].rotate(degToRad(angles[PALM][2]), 0, 1, 0);
 			mat[finger].rotate(degToRad(angles[PALM][1]), 1, 0, 0);
 			mat[finger].rotate(degToRad(angles[PALM][0]), 0, 0, 1);
 			
 			//drawFinger() transforms
-			mat[finger].translate(BASES[finger][0], BASES[finger][1], BASES[finger][2]);
+			mat[finger].translate(basePos[finger][0], basePos[finger][1], basePos[finger][2]);
 			//Undo palm rotations
 			mat[finger].rotate(degToRad(-angles[PALM][0]), 0, 0, 1);
 			mat[finger].rotate(degToRad(-angles[PALM][1]), 1, 0, 0);
@@ -301,7 +317,7 @@ public class Hand {
 	}
 	
 	private float getAngleWeight(int finger, int joint){
-		//private static final float[] ANGLEWEIGHTS = {0.0f, 1.0f, 0.5f};
+		//private final float[] ANGLEWEIGHTS = {0.0f, 1.0f, 0.5f};
 		//Try y = x^2
 		assert finger < FINGERNO : "getAngleWeight() bad input!";
 		assert joint < 3 : "getAngleWeight() bad input!";
@@ -327,14 +343,14 @@ public class Hand {
 	/*
 	 * Position relative to base of palm (0, 0, 0)
 	 * Different from OpenGL coordinates
-	 * gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX) does not work as it is affected by camera angle 
+	 * gl.glGetFloatv(GL2.GL_MODELVIEW_MATRIX) does not work as it is affected by camera angle
 	 * NOTE: Returns the SCALED positions
 	 */
 	public synchronized float[] getPos(int finger){
 		float[] pos = {0.0f, 0.0f, 1.0f, 1.0f}; //Matrix4.multVec() takes in a 4-component column-vector
 		mat[finger].multVec(pos, pos);
 		float[] result = new float[3];
-		System.arraycopy(pos, 0, result, 0, result.length);
+		System.arraycopy(pos, 0, result, 0, result.length);		
 		//System.out.println(pos[0] + " " + pos[1] + " " + pos[2]);
 		return result;
 	}

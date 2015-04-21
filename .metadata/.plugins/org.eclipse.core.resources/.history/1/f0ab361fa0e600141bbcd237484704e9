@@ -1,0 +1,121 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import gnu.io.CommPortIdentifier;
+import gnu.io.SerialPort;
+import gnu.io.SerialPortEvent;
+import gnu.io.SerialPortEventListener;
+
+import java.util.Enumeration;
+
+public class SerialReader extends CommReader implements SerialPortEventListener {
+	SerialPort serialPort;
+	
+	/**
+	 * A BufferedReader which will be fed by a InputStreamReader converting the
+	 * bytes into characters making the displayed results codepage independent
+	 */
+	/** Milliseconds to block while waiting for port open */
+	private static final int TIME_OUT = 2000;
+	/** Default bits per second for COM port. */
+	//Common baud rates: 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, or 115200
+	public final int DATA_RATE = 19200; //Recommended 14400
+	
+	private String portName;
+	
+	private float[] data = new float[MainActivity.DATALENGTH]; //3 values per sensor
+	
+	public SerialReader(String port){
+		portName = port;
+	}
+	
+	public void initialize() {
+		CommPortIdentifier portId = null;
+		@SuppressWarnings("rawtypes") //Suppresses the unknown Enumeration warning
+		Enumeration portEnum = CommPortIdentifier.getPortIdentifiers();
+
+		// First, Find an instance of serial port as set in PORT_NAMES.
+		while (portEnum.hasMoreElements()) {
+			CommPortIdentifier currPortId = (CommPortIdentifier) portEnum
+					.nextElement();
+			/*
+			for (String portName : PORT_NAMES) {
+				if (currPortId.getName().equals(portName)) {
+					portId = currPortId;
+					break;
+				}
+			}
+			*/
+			if (currPortId.getName().equals(portName))
+				portId = currPortId;
+		}
+		if (portId == null) {
+			System.out.println("Could not find COM port.");
+			System.exit(0);
+			return;
+		}
+
+		try {
+			// open serial port, and use class name for the appName.
+			serialPort = (SerialPort) portId.open(this.getClass().getName(),
+					TIME_OUT);
+
+			// set port parameters
+			serialPort.setSerialPortParams(DATA_RATE, SerialPort.DATABITS_8,
+					SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
+
+			// open the streams
+			input = new BufferedReader(new InputStreamReader(
+					serialPort.getInputStream()));
+			output = serialPort.getOutputStream();
+			
+			// add event listeners
+			serialPort.addEventListener(this);
+			serialPort.notifyOnDataAvailable(true);
+		} catch (Exception e) {
+			System.err.println(e.toString());
+			System.exit(0);
+		}
+	}
+
+	/**
+	 * This should be called when you stop using the port. This will prevent
+	 * port locking on platforms like Linux.
+	 */
+	public void close() {
+		if (serialPort != null) {
+			serialPort.removeEventListener();
+			serialPort.close();
+		}
+	}
+
+	/**
+	 * Handle an event on the serial port. Read the data and print it.
+	 */
+	public void serialEvent(SerialPortEvent oEvent) {
+		if (oEvent.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
+			try {
+				if (input.ready()){
+					String in = input.readLine();
+					String[] strData = in.split(",");
+					//System.out.println(in);
+					try {
+						for (int i = 0; i < strData.length; i++)
+							data[i] = Float.valueOf(strData[i]);
+						if (semaphore.tryAcquire()) {
+							dataSet.update(data);
+							newData = true;
+							newSemaphore.release(); //TODO: Change to match semaphore implementation
+							semaphore.release();
+						}
+					} catch (Exception e){
+						System.err.println("Error parsing: " + in);
+					}					
+				}
+			} catch (Exception e) {
+				//e.printStackTrace();
+			}
+		}
+		// Ignore all the other eventTypes, but you should consider the other
+		// ones.
+	}
+}

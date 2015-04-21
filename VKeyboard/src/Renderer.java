@@ -13,7 +13,6 @@ import javax.media.opengl.glu.GLU;
 import javax.swing.event.MouseInputAdapter;
 
 /*
- * TODO: Init hand
  * Note: Sensor yaw pitch roll is different from model yaw pitch roll
  */
 
@@ -27,7 +26,7 @@ class Renderer extends MouseInputAdapter implements GLEventListener {
 	private GL2 gl;
 	private Animator animator;
 	
-	private Hand rHand;
+	private Hand hand;
 	
 	public Renderer(){
 		cam = new Camera();
@@ -46,7 +45,7 @@ class Renderer extends MouseInputAdapter implements GLEventListener {
     	animator.add(canvas);
     	animator.start();
     	
-    	rHand = new Hand();
+    	hand = new Hand();
 	}
 	
 	public GLCanvas getCanvas(){
@@ -102,7 +101,7 @@ class Renderer extends MouseInputAdapter implements GLEventListener {
 				lookAt[4], lookAt[5], lookAt[6], lookAt[7], lookAt[8]);
 		
 		//Draw Hand
-		rHand.drawHand(gl);
+		hand.drawHand(gl);
 		
 		//Draws two joints
 //		gl.glPushMatrix();
@@ -172,7 +171,6 @@ class Renderer extends MouseInputAdapter implements GLEventListener {
 	}
 	
 	public Hand getHand(){
-		return rHand;
-	}
-	
+		return hand;
+	}	
 }

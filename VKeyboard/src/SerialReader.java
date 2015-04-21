@@ -1,40 +1,32 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-
 import gnu.io.CommPortIdentifier;
 import gnu.io.SerialPort;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 
-import java.util.Arrays;
 import java.util.Enumeration;
 
-public class SerialReader implements SerialPortEventListener {
+public class SerialReader extends CommReader implements SerialPortEventListener {
 	SerialPort serialPort;
-	/** The port we're normally going to use. */
-	private static final String PORT_NAMES[] = { 
-		//"/dev/tty.usbserial-A9007UX1", // Mac OS X
-		//"/dev/ttyUSB0", // Linux
-		"COM6"// Windows
-	};
+	
 	/**
 	 * A BufferedReader which will be fed by a InputStreamReader converting the
 	 * bytes into characters making the displayed results codepage independent
 	 */
-	private BufferedReader input;
-	/** The output stream to the port */
-	@SuppressWarnings("unused") //Remove this suppression when output is necessary
-	private OutputStream output;
 	/** Milliseconds to block while waiting for port open */
 	private static final int TIME_OUT = 2000;
 	/** Default bits per second for COM port. */
-	
 	//Common baud rates: 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, or 115200
-	public final int DATA_RATE = 14400; //Recommended 14400
-	public final int DATALENGTH = MainActivity.SENSORCOUNT*3;
-	private boolean dataReady = false;	
-	private float[] data = new float[DATALENGTH]; //3 values per sensor
+	public final int DATA_RATE = 19200; //Recommended 14400
+	
+	private String portName;
+	
+	private float[] data = new float[MainActivity.DATALENGTH]; //3 values per sensor
+	
+	public SerialReader(String port){
+		portName = port;
+	}
 	
 	public void initialize() {
 		CommPortIdentifier portId = null;
@@ -45,16 +37,20 @@ public class SerialReader implements SerialPortEventListener {
 		while (portEnum.hasMoreElements()) {
 			CommPortIdentifier currPortId = (CommPortIdentifier) portEnum
 					.nextElement();
+			/*
 			for (String portName : PORT_NAMES) {
 				if (currPortId.getName().equals(portName)) {
 					portId = currPortId;
 					break;
 				}
 			}
+			*/
+			if (currPortId.getName().equals(portName))
+				portId = currPortId;
 		}
-		System.out.println("Port ID: " + portId);
 		if (portId == null) {
 			System.out.println("Could not find COM port.");
+			System.exit(0);
 			return;
 		}
 
@@ -71,12 +67,13 @@ public class SerialReader implements SerialPortEventListener {
 			input = new BufferedReader(new InputStreamReader(
 					serialPort.getInputStream()));
 			output = serialPort.getOutputStream();
-
+			
 			// add event listeners
 			serialPort.addEventListener(this);
 			serialPort.notifyOnDataAvailable(true);
 		} catch (Exception e) {
 			System.err.println(e.toString());
+			System.exit(0);
 		}
 	}
 
@@ -84,7 +81,7 @@ public class SerialReader implements SerialPortEventListener {
 	 * This should be called when you stop using the port. This will prevent
 	 * port locking on platforms like Linux.
 	 */
-	public synchronized void close() {
+	public void close() {
 		if (serialPort != null) {
 			serialPort.removeEventListener();
 			serialPort.close();
@@ -94,46 +91,34 @@ public class SerialReader implements SerialPortEventListener {
 	/**
 	 * Handle an event on the serial port. Read the data and print it.
 	 */
-	public synchronized void serialEvent(SerialPortEvent oEvent) {
-		dataReady = false;
+	public void serialEvent(SerialPortEvent oEvent) {
 		if (oEvent.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
 			try {
-				String in = input.readLine();
-				//System.out.println(in);
-				String[] strData = in.split(",");
-				try {
-					for (int i = 0; i < strData.length; i++)
-						data[i] = Float.valueOf(strData[i]);
-					dataReady = true;
-				} catch (Exception e){
-					System.err.println("Parse Fail - " + in + " : " + e.toString());
-					for (int i = 0; i < data.length; i++)
-						data[i] = 0.0f;
+				if (input.ready()){
+					String in = input.readLine();
+					String[] strData = in.split(",");
+					//System.out.println(in);
+					try {
+						for (int i = 0; i < strData.length; i++)
+							data[i] = Float.valueOf(strData[i]);
+						if (dataSemaphore.tryAcquire()) {
+							dataSet.update(data);
+							isReady = true;
+							dataSemaphore.release();
+							if (updateSemaphore.availablePermits() < 1)
+								updateSemaphore.release();
+						}
+					} catch (Exception e){
+						isReady = false;
+						System.err.println("Error parsing: " + in);
+					}					
 				}
 			} catch (Exception e) {
-				System.err.println("Read & Split Fail: " + e.toString());
-				for (int i = 0; i < data.length; i++)
-					data[i] = 0.0f;
+				isReady = false;
+				System.err.println("READ ERROR!");
 			}
 		}
 		// Ignore all the other eventTypes, but you should consider the other
 		// ones.
-	}
-	
-	public synchronized float[] read(){
-		if (dataReady == true){
-			dataReady = false;
-			return data;
-		}
-		else{
-			System.err.println("DATA NOT READY!!!");
-			float[] zeros = new float[data.length];
-			Arrays.fill(zeros, 0.0f);
-			return zeros;
-		}
-	}
-	
-	public synchronized boolean isReady(){
-		return dataReady;
 	}
 }

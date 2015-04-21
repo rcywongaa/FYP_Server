@@ -1,0 +1,32 @@
+import java.io.BufferedReader;
+import java.io.OutputStream;
+import java.util.concurrent.Semaphore;
+
+/*
+ * TODO: Handle illegal read of old data
+ */
+
+public abstract class CommReader {
+	protected boolean isReady = false;
+	protected Semaphore updateSemaphore = new Semaphore(1, true); //Checks for new data
+	protected Semaphore dataSemaphore = new Semaphore(1, true); //Protect data read write
+	protected DataSet dataSet = new DataSet();
+	protected BufferedReader input;
+	protected OutputStream output;
+	
+	public abstract void initialize();
+	
+	public abstract void close();
+	
+	public DataSet read(){
+		updateSemaphore.acquireUninterruptibly();
+		dataSemaphore.acquireUninterruptibly();
+		DataSet result = dataSet.copy();
+		dataSemaphore.release();
+		return result;
+	}
+	
+	public boolean isReady(){
+		return dataSemaphore.tryAcquire() && isReady;
+	}
+}

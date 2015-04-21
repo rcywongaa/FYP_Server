@@ -1,0 +1,199 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+
+import gnu.io.CommPortIdentifier;
+import gnu.io.SerialPort;
+import gnu.io.SerialPortEvent;
+import gnu.io.SerialPortEventListener;
+
+import java.util.Arrays;
+import java.util.Enumeration;
+
+public class SerialReader implements SerialPortEventListener {
+	SerialPort serialPort;
+	
+	/**
+	 * A BufferedReader which will be fed by a InputStreamReader converting the
+	 * bytes into characters making the displayed results codepage independent
+	 */
+	private BufferedReader input;
+	/** The output stream to the port */
+	@SuppressWarnings("unused") //Remove this suppression when output is necessary
+	private OutputStream output;
+	/** Milliseconds to block while waiting for port open */
+	private static final int TIME_OUT = 2000;
+	/** Default bits per second for COM port. */
+	//Common baud rates: 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, or 115200
+	public final int DATA_RATE = 14400; //Recommended 14400
+	
+	private String portName;
+	
+	private float EPSILON = 0.99f;
+	public final int DATALENGTH = MainActivity.SENSORCOUNT * 4 - 1 + 2;  //SensorCount * (3 angles + 1 tap) - palm tap + 2 displacement
+	private boolean dataReady = false;	
+	private float[] data = new float[DATALENGTH]; //3 values per sensor
+	private DataSet dataSet;
+	
+	public SerialReader(String port){
+		portName = port;
+	}
+	
+	public void initialize() {
+		CommPortIdentifier portId = null;
+		@SuppressWarnings("rawtypes") //Suppresses the unknown Enumeration warning
+		Enumeration portEnum = CommPortIdentifier.getPortIdentifiers();
+
+		// First, Find an instance of serial port as set in PORT_NAMES.
+		while (portEnum.hasMoreElements()) {
+			CommPortIdentifier currPortId = (CommPortIdentifier) portEnum
+					.nextElement();
+			/*
+			for (String portName : PORT_NAMES) {
+				if (currPortId.getName().equals(portName)) {
+					portId = currPortId;
+					break;
+				}
+			}
+			*/
+			if (currPortId.getName().equals(portName))
+				portId = currPortId;
+		}
+		System.out.println("Port ID: " + portId);
+		if (portId == null) {
+			System.out.println("Could not find COM port.");
+			System.exit(0);
+			return;
+		}
+
+		try {
+			// open serial port, and use class name for the appName.
+			serialPort = (SerialPort) portId.open(this.getClass().getName(),
+					TIME_OUT);
+
+			// set port parameters
+			serialPort.setSerialPortParams(DATA_RATE, SerialPort.DATABITS_8,
+					SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
+
+			// open the streams
+			input = new BufferedReader(new InputStreamReader(
+					serialPort.getInputStream()));
+			output = serialPort.getOutputStream();
+
+			// add event listeners
+			serialPort.addEventListener(this);
+			serialPort.notifyOnDataAvailable(true);
+		} catch (Exception e) {
+			System.err.println(e.toString());
+			System.exit(0);
+		}
+	}
+
+	/**
+	 * This should be called when you stop using the port. This will prevent
+	 * port locking on platforms like Linux.
+	 */
+	public synchronized void close() {
+		if (serialPort != null) {
+			serialPort.removeEventListener();
+			serialPort.close();
+		}
+	}
+
+	/**
+	 * Handle an event on the serial port. Read the data and print it.
+	 */
+	public synchronized void serialEvent(SerialPortEvent oEvent) {
+		dataReady = false;
+		if (oEvent.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
+			try {
+				String in = input.readLine();
+				//System.out.println(in);
+				String[] strData = in.split(",");
+				try {
+					for (int i = 0; i < strData.length; i++)
+						data[i] = Float.valueOf(strData[i]);
+					dataSet = new DataSet(data);
+					dataReady = true;
+				} catch (Exception e){
+					System.err.println("Parse Fail - " + in + " : " + e.toString());
+					for (int i = 0; i < data.length; i++)
+						data[i] = 0.0f;
+				}
+			} catch (Exception e) {
+				System.err.println("Read & Split Fail: " + e.toString());
+				for (int i = 0; i < data.length; i++)
+					data[i] = 0.0f;
+			}
+		}
+		// Ignore all the other eventTypes, but you should consider the other
+		// ones.
+	}
+	
+	public synchronized DataSet read(){
+		if (dataReady == true){
+			dataReady = false;
+			return dataSet;
+		}
+		else{
+			System.err.println("DATA NOT READY!!!");
+			return new DataSet();
+		}	
+	}
+	
+	public synchronized boolean isReady(){
+		return dataReady;
+	}
+	
+	
+	
+	
+	/****************************** DataSet Class *******************************/
+	public class DataSet{
+		private float[] angles = new float[MainActivity.SENSORCOUNT * 3];
+		private boolean[] taps = new boolean[MainActivity.SENSORCOUNT - 1]; //Palm doesn't tap
+		private float[] palmPos = new float[2];
+		
+		public DataSet(){
+			Arrays.fill(angles, 0.0f);
+			Arrays.fill(taps, false);
+			Arrays.fill(palmPos, 0.0f);
+		}
+		
+		public DataSet(float[] data){
+			assert data.length == DATALENGTH : "DataSet() bad input!";
+			for (int i = 0; i < MainActivity.SENSORCOUNT; i++){
+				angles[i * 3] = degToRad(data[i * 3]);
+				angles[i * 3 + 1] = degToRad(data[i * 3 + 1]);
+				angles[i * 3 + 2] = degToRad(data[i * 3 + 2]);
+				if (i < MainActivity.SENSORCOUNT - 1)
+					taps[i] = data[MainActivity.SENSORCOUNT * 3 + i] > EPSILON;
+			}
+			if (MainActivity.HASMOUSE){
+				palmPos[0] = data[DATALENGTH - 2];
+				palmPos[1] = data[DATALENGTH - 1];				
+			}
+		}
+		
+		public float[] getAngles(){
+			return angles;
+		}
+		
+		public boolean[] getTaps(){
+			return taps;
+		}
+		
+		public float[] getPalmPos(){
+			return palmPos;
+		}
+	}
+	
+	
+	public float radToDeg(float rad){
+		return (float) (rad  * 180.0f / Math.PI);
+	}
+	
+	public float degToRad(float deg){
+		return (float) (deg * Math.PI / 180.0f);
+	}
+}

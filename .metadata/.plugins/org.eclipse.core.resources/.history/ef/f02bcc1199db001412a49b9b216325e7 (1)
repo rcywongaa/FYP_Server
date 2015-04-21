@@ -1,0 +1,184 @@
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.swing.JFrame;
+ 
+/*
+ * TODO: Second hand
+ * TODO: Bluetooth connection
+ * TODO: Implement proper filter (raw data for tap detection, filtered data for angles)
+ * TODO: Handle unlikely finger initiations
+ * 
+ * Procedures:
+ * 1: Initialize forward position of all fingers
+ * 2: Initialize J, K, L, ; positions (right hand)
+ * 
+ * NOTE: Size of raw data = (3 Axis * 3 Sensors * SENSORCOUNT * 32bit float) 
+ * NOTE: Keyboard.FINGERNO (excludes palm) != Hand.FINGERNO (includes palm)
+ */
+
+public class MainActivity 
+{
+	/************************* IMPORTANT SETTINGS ************************/
+	public static final boolean HASMOUSE = true;
+	public static final boolean HASLEFT = false;
+	public static final boolean HASBLUETOOTH = false;
+	/*
+	 * Serial Port: COM6, COM14
+	 * USB Port: COM11
+	 */
+	private static final String PORT1 = "COM6";
+	private static final String PORT2 = "COM14";
+	
+	/********************************************************************/
+	
+	public static final int INITTIME = 3000; //ms
+	public static final int SENSORCOUNT = 6;
+	public static final int READRATE = 1; //ms
+	final static ScheduledExecutorService SCHEDULER = Executors.newScheduledThreadPool(1);
+	private final static int RIGHT = 0;
+	private final static int LEFT = 1;
+	private static SerialReader reader[] = null;
+	private static ReadRunnable readRunner = null;
+	private static Renderer renderer = null;
+	private static Keyboard keyboard = null;
+	private static BTReader btReader = null;
+	
+    public static void main(String[] args) 
+    {
+    	if (HASBLUETOOTH){
+    		btReader = new BTReader();
+    		btReader.initialize();
+    	}
+    	if (HASLEFT){
+    		reader = new SerialReader[2];
+    		reader[RIGHT] = new SerialReader(PORT1);
+       		reader[RIGHT].initialize();
+       		reader[LEFT] = new SerialReader(PORT2);
+   			reader[LEFT].initialize();
+    	}
+    	else {
+    		reader = new SerialReader[1];
+    		reader[RIGHT] = new SerialReader(PORT1);
+    		reader[RIGHT].initialize();
+    	}
+
+   		renderer = new Renderer();
+    	readRunner = new ReadRunnable();
+        
+        JFrame handFrame = new JFrame( "Hand Model" );
+        handFrame.getContentPane().add( renderer.getCanvas());
+        handFrame.setSize( handFrame.getContentPane().getPreferredSize() );
+        handFrame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent ev) {
+            	for (int i = 0; i < reader.length; i++)
+            		reader[i].close();
+            	System.exit(0);
+            }
+        });
+        handFrame.setVisible( true );
+        
+        System.out.println("Initializing right hand forward...");
+        while (renderer.getRHand().isInit() == false){
+        	SerialReader.DataSet data = getData(RIGHT);
+        	renderer.getRHand().initRadAngles(Hand.Side.RIGHT, data.getAngles());
+			try {
+				Thread.sleep(READRATE);
+			} catch (InterruptedException e) {
+				System.out.println("initRadAngles() sleep fail!");
+				e.printStackTrace();
+			}
+        }
+        
+        if (HASLEFT){
+            System.out.println("Initializing left hand forward...");
+        	 while (renderer.getLHand().isInit() == false){
+             	SerialReader.DataSet data = getData(LEFT);
+             	renderer.getRHand().initRadAngles(Hand.Side.LEFT, data.getAngles());
+     			try {
+     				Thread.sleep(READRATE);
+     			} catch (InterruptedException e) {
+     				System.out.println("initRadAngles() sleep fail!");
+     				e.printStackTrace();
+     			}
+             }
+    	}
+        
+        while (keyboard == null || keyboard.isInit() == false){
+        	if (!HASLEFT){
+        		System.out.println("Initializing 'J', 'K', 'L', ';' positions...");
+        		SerialReader.DataSet data = getData(RIGHT);
+        		renderer.getRHand().setRadAngles(data.getAngles());
+        		keyboard = new Keyboard(renderer.getRHand().getXYCoord(), null);
+        	}
+        	else {
+        		System.out.println("Initializing 'J', 'K', 'L', ';' and 'F', 'D', 'S', 'A' positions...");
+        		SerialReader.DataSet rData = getData(RIGHT);
+            	SerialReader.DataSet lData = getData(LEFT);
+            	renderer.getRHand().setRadAngles(rData.getAngles());
+            	renderer.getLHand().setRadAngles(lData.getAngles());
+            	keyboard = new Keyboard(renderer.getRHand().getXYCoord(), renderer.getLHand().getXYCoord());
+        	}
+        	try {
+				Thread.sleep(READRATE);
+			} catch (InterruptedException e) {
+				System.out.println("Keyboard() sleep fail!");
+				e.printStackTrace();
+			}
+        }
+        
+        System.out.println("Initialization complete!");
+
+        SCHEDULER.scheduleAtFixedRate(readRunner, 1000, READRATE, TimeUnit.MILLISECONDS);
+
+        JFrame keyboardFrame = new JFrame("Keyboard View");
+        keyboardFrame.setUndecorated(true);
+		keyboardFrame.getContentPane().add(keyboard.getView());
+		keyboardFrame.pack();
+        keyboardFrame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent ev) {
+                System.exit(0);
+            }
+        });
+        keyboardFrame.setResizable(false);
+        keyboardFrame.setVisible(true);
+    }
+
+    public static SerialReader.DataSet getData(int i){
+    	assert i == RIGHT || (HASLEFT && i == LEFT) : "getData() bad input!";
+    	while (!reader[i].isReady());
+    	return reader[i].read();
+    }
+    
+    //TODO: Change for 2 hands
+    private static class ReadRunnable implements Runnable {
+    	public void run(){
+			if (reader[RIGHT].isReady()){
+				SerialReader.DataSet data = reader[RIGHT].read();
+				renderer.getRHand().setRadAngles(data.getAngles());
+				renderer.getRHand().setPalmPos(data.getPalmPos());
+				float[][] fingerPos = new float[Keyboard.FINGERNO][2];
+				for (int i = Keyboard.THUMB; i < Keyboard.FINGERNO; i++){
+					fingerPos[i] = renderer.getRHand().getXYCoord(i + 1); //due to inconsistent finger indices
+				}
+				keyboard.getView().setPos(fingerPos, true);
+				keyboard.getView().setTap(data.getTaps(), true);
+			}
+			if (HASLEFT && reader[LEFT].isReady()){
+				SerialReader.DataSet data = reader[LEFT].read();
+				renderer.getLHand().setRadAngles(data.getAngles());
+				renderer.getLHand().setPalmPos(data.getPalmPos());
+				float[][] fingerPos = new float[Keyboard.FINGERNO][2];
+				for (int i = Keyboard.THUMB; i < Keyboard.FINGERNO; i++){
+					fingerPos[i] = renderer.getLHand().getXYCoord(i + 1);
+				}
+				keyboard.getView().setPos(fingerPos, false);
+				keyboard.getView().setTap(data.getTaps(), false);
+			}
+			//else System.out.println("Redundant reads...");
+		}
+    }
+}
