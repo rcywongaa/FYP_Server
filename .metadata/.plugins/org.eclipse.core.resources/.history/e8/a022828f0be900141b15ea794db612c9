@@ -25,7 +25,7 @@ public class MainActivity
 	/************************* IMPORTANT SETTINGS ************************/
 	public static final boolean HASMOUSE = true;
 	public static final boolean HASLEFT = true;
-	public static final boolean HASBLUETOOTH = true;  //Remember to disconnect BT
+	public static final boolean HASBLUETOOTH = false;  //Remember to disconnect BT
 	/*
 	 * Serial Port: COM6, COM14
 	 * USB Port: COM11 (unusable)
