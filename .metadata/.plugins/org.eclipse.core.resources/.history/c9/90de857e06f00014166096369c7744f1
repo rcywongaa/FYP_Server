@@ -1,0 +1,8 @@
+
+public class MainActivity {
+	public static void main(String[] args){
+		KeyboardCreator keyboard = new KeyboardCreator();
+		keyboard.create();
+		Thread.wait(50000);
+	}
+}

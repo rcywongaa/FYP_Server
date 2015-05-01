@@ -117,7 +117,7 @@ class Renderer extends MouseInputAdapter implements GLEventListener {
 	}
 
 	public void dispose(GLAutoDrawable arg0) {
-		System.out.println("dispose() called");
+		//TODO:
 	}
 	
 	/*********** MOUSE CONTROLS ************/

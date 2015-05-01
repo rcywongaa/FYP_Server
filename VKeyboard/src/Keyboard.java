@@ -1,10 +1,13 @@
+import java.awt.AWTException;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -15,7 +18,6 @@ import javax.swing.Timer;
 import com.jogamp.opengl.math.VectorUtil;
 
 /*
- * TODO: Support 2 hands
  * TODO: Thumb
  * 
  * NOTE: Using inconsistent finger numbering was a bad idea...
@@ -32,7 +34,8 @@ public class Keyboard {
 	private float rowOffset = 0;
 	/*
 	 * Positions relative to J key (0, 0), 
-	 * +X: Right, +Y: Up
+	 * +X: Right
+	 * +Y: Up
 	 * In centimeters
 	 */
 	private final char[] KEYSEQ = {
@@ -52,7 +55,7 @@ public class Keyboard {
 	private float[][] lInitFingerPos = new float[FINGERNO][2];
 	private float[] rHandOffset = new float[2];
 	private float[] lHandOffset = new float[2];
-	private ArrayList<float[]> worldPos = new ArrayList<float[]>(MainActivity.HASLEFT ? FINGERNO * 2 : FINGERNO); //in cm //FIXME: Two Hands!!
+	private ArrayList<float[]> worldPos = new ArrayList<float[]>(MainActivity.HASLEFT ? FINGERNO * 2 : FINGERNO); //in cm
 	private KeyboardView view;
 	
 	/*
@@ -177,6 +180,12 @@ public class Keyboard {
 		return view;
 	}
 	
+	public void close(){
+		if (view != null) {
+			view.close();
+			view = null;
+		}
+	}
 	
 	/*
 	 * NOTE: All units are in pixels here
@@ -200,8 +209,16 @@ public class Keyboard {
 		private Timer timer;
 		private ArrayList<Character> currKey = new ArrayList<Character>();
 		private boolean[] taps = new boolean[MainActivity.HASLEFT ? FINGERNO * 2 : FINGERNO];
-		
+		private Robot robot;
+
 		public KeyboardView(){
+			try {
+				robot = new Robot();
+			} catch (AWTException e) {
+				// TODO Auto-generated catch block
+				System.err.println("new Robot() failed!");
+				e.printStackTrace();
+			}
 			for (int i = 0; i < KEYNO; i++){
 				if (i < 10){ //First row
 					KEYPOS[i][0] = i * KEYWIDTH;
@@ -229,11 +246,10 @@ public class Keyboard {
 			assert rPos[0].length == 2 : "setPos() bad input!";
 			
 			//Ensures starting finger positions are y-aligned
-			if (lPos == null){
-				for (int finger = MIDDLE; finger < FINGERNO; finger++){
-					rPos[finger][1] -= rInitFingerPos[finger][1] - rInitFingerPos[INDEX][1]; 
-				}
-			} else {
+			for (int finger = MIDDLE; finger < FINGERNO; finger++){
+				rPos[finger][1] -= rInitFingerPos[finger][1] - rInitFingerPos[INDEX][1];
+			}
+			if (lPos != null){
 				for (int finger = MIDDLE; finger < FINGERNO; finger++){
 					rPos[finger][1] -= lInitFingerPos[finger][1] - lInitFingerPos[INDEX][1]; 	
 				}
@@ -253,7 +269,7 @@ public class Keyboard {
 				currKey.add(getKey(rPos[i]));
 			}
 			
-			for (int i = 0; i < lPos.length; i++){
+			for (int i = 0; lPos != null && i < lPos.length; i++){
 				VectorUtil.addVec2(lPos[i], lPos[i], lHandOffset);
 				worldPos.add(lPos[i]);
 				int[] sPos = new int[2];
@@ -267,13 +283,26 @@ public class Keyboard {
 		public void setTap(boolean[] rTapData, boolean[] lTapData){
 			assert rTapData.length == taps.length : "setTap() bad input!";
 			System.arraycopy(rTapData, 0, taps, 0, FINGERNO);
-			System.arraycopy(lTapData, 0, taps, FINGERNO, FINGERNO);
+			if (lTapData != null) System.arraycopy(lTapData, 0, taps, FINGERNO, FINGERNO);
 			for (int i = 0; i < taps.length; i++){
 				if (taps[i] == true){
-					if (i == THUMB)
+					if (i == THUMB){
 						System.out.print(" ");
-					else
-						System.out.print(getKey(worldPos.get(i)));
+						if (!MainActivity.DEBUG){
+							robot.keyPress(KeyEvent.VK_SPACE);
+							robot.keyRelease(KeyEvent.VK_SPACE);
+						}
+					}
+					else{
+						char key = getKey(worldPos.get(i));
+						System.out.print(key);
+						if (key != '?'){
+							if (!MainActivity.DEBUG){
+								robot.keyPress(KeyEvent.VK_A + (key - 'A'));
+								robot.keyRelease(KeyEvent.VK_A + (key - 'A'));
+							}
+						}
+					}
 				}
 			}
 		}
@@ -305,6 +334,9 @@ public class Keyboard {
 			}
 		}
 		
+		public void close(){
+			timer.stop();
+		}
 	}
 
 }

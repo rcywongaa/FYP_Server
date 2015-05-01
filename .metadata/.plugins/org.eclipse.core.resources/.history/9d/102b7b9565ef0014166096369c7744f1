@@ -1,0 +1,98 @@
+package main;
+
+import java.awt.AWTException;
+import java.util.LinkedList;
+
+import response.responseControl;
+import fxml.controller_collections;
+import fxml.fxml_main_controller;
+import fxml.fxml_monitor;
+import fxml.model_controller;
+
+public class DataProcessControl {
+	final private int memory_size = 100;
+	final private int leftclick_finger = 2;
+	final private int rightclick_finger = 3;
+	final private int holdclick_finger = 4;
+	final private int cursor_finger = 0;
+	private clickEvent click;
+	Memory my_memory = null;
+	CursorControl myCursorControl;
+	private controller_collections my_controllers = new controller_collections();
+	private responseControl RC = new responseControl();
+	private data datas = new data(memory_size);
+	private boolean Memory_modified = true;
+	private int yaws_calibrate = 0;
+	public static boolean lock = false;
+	private boolean lock2 = false;
+
+	public DataProcessControl() throws AWTException {
+		myCursorControl = new CursorControl(cursor_finger);
+		click = new clickEvent(leftclick_finger, rightclick_finger,
+				holdclick_finger);
+
+	}
+
+	public responseControl getRC() {
+		return RC;
+	}
+
+	public data get_my_datas() {
+		return datas;
+	}
+
+	public controller_collections get_my_controller() {
+		return my_controllers;
+	}
+
+	public void ProcessData(LinkedList<Float> Datas) throws AWTException {
+
+		if (yaws_calibrate == 1 && datas.getInitialYaws() == null) {
+			datas.setInitialYaws(Datas);
+		}
+		datas.addToMemory(Datas);
+
+		MemoryControl control = new MemoryControl();
+		if (lock == false && Memory_modified == true) {
+			my_memory = control.LoadFromFile();
+			set_modified(false);
+			if(similarityControl.thread!=null)
+			similarityControl.interrupt();
+
+		}
+		if (my_memory != null) {
+			if (datas.getNewestDataRelative() != null) {
+				similarityControl.checkGesture(my_memory,
+						datas.getNewestDataRelative());
+			}
+
+		}
+
+		if (main.my_model_controller != null) {
+			main.my_model_controller.set_sensors_reading(Datas);
+		}
+
+		if (!lock2) {
+			lock2 = true;
+			click.checkClick(datas.getMemory());
+			CursorControl.setCursorPosition(Datas);
+			lock2 = false;
+		}
+	}
+
+	public static void lock_off() {
+		lock = false;
+	}
+
+	public static void lock_on() {
+		lock = true;
+	}
+
+	public void start_yaws_calibrate() {
+		yaws_calibrate = 1;
+	}
+
+	public void set_modified(boolean bo) {
+		Memory_modified = bo;
+	}
+}

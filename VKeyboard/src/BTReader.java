@@ -22,9 +22,6 @@ import javax.microedition.io.StreamConnection;
  * Incorrect port number (http://windows.microsoft.com/en-hk/windows/choose-com-port-bluetooth#1TC=windows-7)
  * BT stack (driver) problem
  * 
- * 
- * TODO: Change for 2 hands
- * TODO: Consider using interface to combine BT and Serial Readers
  */
 public class BTReader extends CommReader implements DiscoveryListener{
 	private static Object lock = new Object();
@@ -37,7 +34,7 @@ public class BTReader extends CommReader implements DiscoveryListener{
 	RemoteDevice remoteDevice;
 	private static Vector<RemoteDevice> vecDevices = new Vector<RemoteDevice>();
 	
-	private float[] data = new float[MainActivity.DATALENGTH]; //3 values per sensor
+	private float[] data = new float[KeyboardCreator.DATALENGTH]; //3 values per sensor
 	private String btName;
 	Thread updateThread;
 	
@@ -150,6 +147,7 @@ public class BTReader extends CommReader implements DiscoveryListener{
 			streamConnection = (StreamConnection) Connector.open(connectionURL);
 			System.out.println("Connection URL: " + connectionURL);
 			input = new BufferedReader(new InputStreamReader(streamConnection.openInputStream()));
+			output = streamConnection.openOutputStream();
 		} catch (IOException e1) {
 			System.err.println("Connector.open() failed!");
 			e1.printStackTrace();
@@ -206,7 +204,6 @@ public class BTReader extends CommReader implements DiscoveryListener{
 			System.out.println("Device Discovered: "
 					+ btDevice.getFriendlyName(false));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		if (!vecDevices.contains(btDevice)) {

@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
-	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
-		<item value="257" key="DIALOG_WIDTH"/>
-		<item value="218" key="DIALOG_Y_ORIGIN"/>
-		<item value="1125" key="DIALOG_X_ORIGIN"/>
-		<item value="380" key="DIALOG_HEIGHT"/>
-		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
-	</section>
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
-		<item value="true" key="wrap"/>
-		<item value="true" key="casesensitive"/>
 		<item value="false" key="isRegEx"/>
+		<item value="" key="selection"/>
+		<item value="true" key="casesensitive"/>
 		<item value="false" key="incremental"/>
+		<item value="true" key="wrap"/>
 		<item value="false" key="wholeword"/>
-		<item value="degToRad" key="selection"/>
 		<list key="findhistory">
+			<item value="JFrame"/>
+			<item value="close"/>
+			<item value="lock2"/>
+			<item value="getMemory"/>
+			<item value="interrupt"/>
+			<item value="get_the"/>
+			<item value="get"/>
 			<item value="degToRad"/>
-			<item value="radToDeg"/>
-			<item value="isReady"/>
-			<item value="wait"/>
-			<item value="Key margin:"/>
-			<item value="initMargin"/>
-			<item value="static "/>
-			<item value="static"/>
 		</list>
 		<list key="replacehistory">
 			<item value=""/>
 			<item value="public"/>
 		</list>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
+		<item value="257" key="DIALOG_WIDTH"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+		<item value="380" key="DIALOG_HEIGHT"/>
+		<item value="190" key="DIALOG_Y_ORIGIN"/>
+		<item value="604" key="DIALOG_X_ORIGIN"/>
 	</section>
 </section>

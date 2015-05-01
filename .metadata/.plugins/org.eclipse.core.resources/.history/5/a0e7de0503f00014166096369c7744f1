@@ -1,0 +1,6 @@
+
+public class MainActivity {
+	static void main(String[] args){
+		KeyboardCreator keyboard = new KeyboardCreator();
+	}
+}

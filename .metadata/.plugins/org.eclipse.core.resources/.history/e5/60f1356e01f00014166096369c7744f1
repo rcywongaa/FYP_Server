@@ -1,0 +1,226 @@
+import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.swing.JFrame;
+ 
+/*
+ * TODO: Implement Kalman / Comlplementary filter
+ * TODO: Handle unlikely finger initiations
+ * 
+ * Procedures:
+ * 1: Initialize forward position of all fingers
+ * 2: Initialize J, K, L, ; positions (right hand)
+ * 
+ * NOTE: Size of raw data = (3 Axis * 3 Sensors * SENSORCOUNT * 32bit float) 
+ * NOTE: Keyboard.FINGERNO (excludes palm) != Hand.FINGERNO (includes palm)
+ */
+
+public class KeyboardCreator 
+{
+	/************************* IMPORTANT SETTINGS ************************/
+	public static final boolean HASMOUSE = true;
+	public static final boolean HASLEFT = true;
+	public static final boolean HASBLUETOOTH = false;  //Remember to disconnect BT
+	/*
+	 * Serial Port: COM6, COM14
+	 * USB Port: COM11 (unusable)
+	 */
+	private static final String PORT1 = "COM6";
+	private static final String PORT2 = "COM15";
+	private static final String BT1 = "RIGHTHAND";
+	private static final String BT2 = "LEFTHAND";
+	private static final String BT1URL = "btspp://301408290406:1;authenticate=false;encrypt=false;master=false";
+	private static final String BT2URL = "btspp://301408290404:1;authenticate=false;encrypt=false;master=false";
+	//RIGHTHAND btspp://301408290406:1;authenticate=false;encrypt=false;master=false
+	//LEFTHAND btspp://301408290404:1;authenticate=false;encrypt=false;master=false
+	
+	/********************************************************************/
+	
+	private final static int KEYBOARDMODE = 1;
+	private final static int MOUSEMODE = 2;
+	public static final int INITTIME = 3000; //ms
+	public static final int SENSORCOUNT = 6;
+	public static final int READRATE = 20; //ms
+	public final static int RIGHT = 0;
+	public final static int LEFT = 1;
+	public final static int DATALENGTH = SENSORCOUNT * 4 - 1 + 2;  //SensorCount * (3 angles + 1 tap) - palm tap + 2 displacement
+	private final static ScheduledExecutorService SCHEDULER = Executors.newScheduledThreadPool(1);
+	private final static Rectangle screenBounds = GraphicsEnvironment.getLocalGraphicsEnvironment().
+    		getMaximumWindowBounds();
+	private static CommReader reader[] = null;
+	public static ReadRunnable readRunner = null;
+	private static Renderer renderer[] = null;
+	private static Keyboard keyboard = null;
+	
+    public static void main(String[] args) 
+    {
+    	if (HASLEFT){
+    		if (HASBLUETOOTH){
+    			reader = new BTReader[2];
+    			reader[RIGHT] = new BTReader(BT1, BT1URL);
+    			reader[LEFT] = new BTReader(BT2, BT2URL);
+    		} else {
+    			reader = new SerialReader[2];
+    			reader[RIGHT] = new SerialReader(PORT1);
+    			reader[LEFT] = new SerialReader(PORT2);
+    		}
+       		reader[RIGHT].initialize();
+   			reader[LEFT].initialize();
+   			
+   			renderer = new Renderer[2];
+   			renderer[RIGHT] = new Renderer();
+   			renderer[LEFT] = new Renderer();
+    	} else {
+    		reader = (HASBLUETOOTH ? new BTReader[1] : new SerialReader[1]);
+    		reader[RIGHT] = (HASBLUETOOTH ? new BTReader(BT1, BT1URL) : new SerialReader(PORT1));
+    		reader[RIGHT].initialize();
+    		
+    		renderer = new Renderer[1];
+    		renderer[RIGHT] = new Renderer();
+    	}
+    	
+    	readRunner = new ReadRunnable();
+        
+        JFrame rHandFrame = new JFrame( "Right Hand Model" );
+        rHandFrame.getContentPane().add( renderer[RIGHT].getCanvas());
+        rHandFrame.setSize( rHandFrame.getContentPane().getPreferredSize() );
+        rHandFrame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent ev) {
+            	for (int i = 0; i < reader.length; i++)
+            		reader[i].close();
+            	System.exit(0);
+            }
+        });
+        rHandFrame.setLocation((int)screenBounds.getMaxX() - rHandFrame.getWidth(), 0);
+        rHandFrame.setVisible( true );
+        
+        if (HASLEFT){
+        	JFrame lHandFrame = new JFrame( "Left Hand Model" );
+			lHandFrame.getContentPane().add( renderer[LEFT].getCanvas());
+			lHandFrame.setSize( lHandFrame.getContentPane().getPreferredSize() );
+			lHandFrame.addWindowListener(new WindowAdapter() {
+				public void windowClosing(WindowEvent ev) {
+					for (int i = 0; i < reader.length; i++)
+						reader[i].close();
+					System.exit(0);
+				}
+			});
+			lHandFrame.setVisible( true );
+        }
+        
+        for (int i = 0; i < reader.length; i++){ //Ensure reader has begun receiving valid data
+        	while (!reader[i].isReady());
+        	reader[i].write(KEYBOARDMODE);
+        }
+        
+        
+        
+        System.out.println("Initializing right hand forward...");
+        while (renderer[RIGHT].getHand().isInit() == false){
+        	DataSet data = getData(RIGHT);
+        	renderer[RIGHT].getHand().initRadAngles(RIGHT, data.getAngles());
+			try {
+				Thread.sleep(READRATE);
+			} catch (InterruptedException e) {
+				System.out.println("initRadAngles() sleep fail!");
+				e.printStackTrace();
+			}
+        }
+        
+        if (HASLEFT){
+            System.out.println("Initializing left hand forward...");
+        	 while (renderer[LEFT].getHand().isInit() == false){
+             	DataSet data = getData(LEFT);
+             	renderer[LEFT].getHand().initRadAngles(LEFT, data.getAngles());
+     			try {
+     				Thread.sleep(READRATE);
+     			} catch (InterruptedException e) {
+     				System.out.println("initRadAngles() sleep fail!");
+     				e.printStackTrace();
+     			}
+             }
+    	}
+        
+        while (keyboard == null || keyboard.isInit() == false){
+        	if (!HASLEFT){
+        		System.out.println("Initializing 'J', 'K', 'L', ';' positions...");
+        		DataSet data = getData(RIGHT);
+        		renderer[RIGHT].getHand().setRadAngles(data.getAngles());
+        		keyboard = new Keyboard(renderer[RIGHT].getHand().getXYCoord(), null);
+        	}
+        	else {
+        		System.out.println("Initializing 'F', 'D', 'S', 'A' and 'J', 'K', 'L', ';'positions...");
+        		DataSet rData = getData(RIGHT);
+            	DataSet lData = getData(LEFT);
+            	renderer[RIGHT].getHand().setRadAngles(rData.getAngles());
+            	renderer[LEFT].getHand().setRadAngles(lData.getAngles());
+            	keyboard = new Keyboard(renderer[RIGHT].getHand().getXYCoord(), renderer[LEFT].getHand().getXYCoord());
+        	}
+        	try {
+				Thread.sleep(READRATE);
+			} catch (InterruptedException e) {
+				System.out.println("Keyboard() sleep fail!");
+				e.printStackTrace();
+			}
+        }
+        
+        System.out.println("Initialization complete!");
+
+        SCHEDULER.scheduleAtFixedRate(readRunner, 1000, READRATE, TimeUnit.MILLISECONDS);
+
+        JFrame keyboardFrame = new JFrame("Keyboard View");
+        keyboardFrame.setUndecorated(true);
+		keyboardFrame.getContentPane().add(keyboard.getView());
+		keyboardFrame.pack();
+        keyboardFrame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent ev) {
+                System.exit(0);
+            }
+        });
+        keyboardFrame.setResizable(false);
+        keyboardFrame.setLocation((int)screenBounds.getMaxX() /2 - keyboardFrame.getSize().width / 2,
+        		(int)screenBounds.getMaxY() - keyboardFrame.getSize().height);
+        keyboardFrame.setVisible(true);
+    }
+
+    public static DataSet getData(int i){
+    	assert i == RIGHT || (HASLEFT && i == LEFT) : "getData() bad input!";
+    	//while (!reader[i].isReady());
+    	return reader[i].read();
+    }
+    
+    public static class ReadRunnable implements Runnable {
+    	public void run(){
+			DataSet rData = reader[RIGHT].read();
+			renderer[RIGHT].getHand().setRadAngles(rData.getAngles());
+			renderer[RIGHT].getHand().setPalmPos(rData.getPalmPos());
+			float[][] rFingerPos = new float[Keyboard.FINGERNO][2];
+			for (int i = Keyboard.THUMB; i < Keyboard.FINGERNO; i++){
+				rFingerPos[i] = renderer[RIGHT].getHand().getXYCoord(i + 1); //due to inconsistent finger indices
+			}
+			
+			//else System.out.println("Redundant reads...");
+			
+			if (HASLEFT){
+				DataSet lData = reader[LEFT].read();
+				renderer[LEFT].getHand().setRadAngles(lData.getAngles());
+				renderer[LEFT].getHand().setPalmPos(lData.getPalmPos());
+				float[][] lFingerPos = new float[Keyboard.FINGERNO][2];
+				for (int i = Keyboard.THUMB; i < Keyboard.FINGERNO; i++){
+					lFingerPos[i] = renderer[LEFT].getHand().getXYCoord(i + 1);
+				}
+				keyboard.getView().setPos(rFingerPos, lFingerPos);
+				keyboard.getView().setTap(rData.getTaps(), lData.getTaps());
+			}
+			else {
+				keyboard.getView().setPos(rFingerPos, null);
+				keyboard.getView().setTap(rData.getTaps(), null);
+			}
+		}
+    }
+}

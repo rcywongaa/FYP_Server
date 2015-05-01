@@ -18,11 +18,11 @@ public class SerialReader extends CommReader implements SerialPortEventListener 
 	private static final int TIME_OUT = 2000;
 	/** Default bits per second for COM port. */
 	//Common baud rates: 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, or 115200
-	public final int DATA_RATE = 19200; //Recommended 14400
+	public final int DATA_RATE = 230400; //Max 230400
 	
 	private String portName;
 	
-	private float[] data = new float[MainActivity.DATALENGTH]; //3 values per sensor
+	private float[] data = new float[KeyboardCreator.DATALENGTH]; //3 values per sensor
 	
 	public SerialReader(String port){
 		portName = port;

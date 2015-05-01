@@ -21,7 +21,7 @@ import com.jogamp.opengl.math.Matrix4;
 public class Hand {
 	private final float THRESH = 0.2f; //Initialization threshold
 	public final float SCALE = 0.25f; //scales all dimensions
-	private final float MOUSESCALE = 0.00025f; //4000 = 1cm
+	private final float MOUSESCALE = 0.0025f; //400 = 1cm
 	public final float YAWSCALE = 1.0f;
 	//Hard-coded angle offsets, probably a bad idea...
 	private final float[] ANGLEOFFSETS = {0.0f, 0.0f, 0.0f};
@@ -114,7 +114,7 @@ public class Hand {
 				return;
 			}
 		}
-		if (side == MainActivity.LEFT){ //Flip finger positions for left hand
+		if (side == KeyboardCreator.LEFT){ //Flip finger positions for left hand
 			for (int i = 0; i < basePos.length; i++){
 				basePos[i][0] *= -1;
 			}
