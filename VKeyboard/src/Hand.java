@@ -23,6 +23,7 @@ public class Hand {
 	public final float SCALE = 0.25f; //scales all dimensions
 	private final float MOUSESCALE = 0.0025f; //400 = 1cm
 	public final float YAWSCALE = 1.0f;
+	public final float ROLLSCALE = 1.0f;
 	//Hard-coded angle offsets, probably a bad idea...
 	private final float[] ANGLEOFFSETS = {0.0f, 0.0f, 0.0f};
 	
@@ -152,6 +153,7 @@ public class Hand {
 			//angles[finger][1] -= initAngles[finger][1] - initAngles[INDEX][1];
 		}
 		for (int finger = 0; finger < FINGERNO; finger++){
+			angles[finger][0] = ROLLSCALE * (angles[finger][0] - initAngles[finger][0]);
 			angles[finger][2] = YAWSCALE * (angles[finger][2] - initAngles[finger][2]);
 		}
 	}
@@ -243,7 +245,9 @@ public class Hand {
 		
 		gl.glRotatef(angles[finger][2], 0, 1, 0);
 		gl.glRotatef(angles[finger][1] * getAngleWeight(finger, 0), 1, 0, 0);
-		gl.glRotatef(angles[finger][0], 0, 0, 1); //Individual finger roll is unlikely
+//		gl.glRotatef(angles[finger][0], 0, 0, 1); //Individual finger roll is unlikely
+		gl.glRotatef(angles[PALM][0], 0, 0, 1); //TODO: Fingers likely to follow palm roll
+
 		gl.glPushMatrix();
 		gl.glScalef(WIDTHS[finger], HANDHEIGHT, LENGTHS[finger][0]);
 		Box.drawDefaultBox(gl);
@@ -304,7 +308,8 @@ public class Hand {
 			
 			mat[finger].rotate(degToRad(angles[finger][2]), 0, 1, 0);
 			mat[finger].rotate(degToRad(angles[finger][1] * getAngleWeight(finger, 0)), 1, 0, 0);
-			mat[finger].rotate(degToRad(angles[finger][0]), 0, 0, 1); //Individual finger roll is unlikely
+//			mat[finger].rotate(degToRad(angles[finger][0]), 0, 0, 1); //Individual finger roll is unlikely
+			mat[finger].rotate(degToRad(angles[PALM][0]), 0, 0, 1); //TODO: Fingers likely to follow palm roll
 			
 			mat[finger].translate(0, 0, LENGTHS[finger][0] + JOINTLENGTH);
 			mat[finger].rotate(degToRad(angles[finger][1] * getAngleWeight(finger, 1)), 1, 0, 0);

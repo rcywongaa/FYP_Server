@@ -215,7 +215,6 @@ public class Keyboard {
 			try {
 				robot = new Robot();
 			} catch (AWTException e) {
-				// TODO Auto-generated catch block
 				System.err.println("new Robot() failed!");
 				e.printStackTrace();
 			}
@@ -241,7 +240,7 @@ public class Keyboard {
 		}
 		
 		//Input world 2D coordinates
-		public void setPos(float[][] rPos, float[][] lPos){
+		public synchronized void setPos(float[][] rPos, float[][] lPos){
 			assert rPos.length == FINGERNO : "setPos() bad input!";
 			assert rPos[0].length == 2 : "setPos() bad input!";
 			
@@ -311,7 +310,7 @@ public class Keyboard {
 			repaint();
 		}		
 		
-		public void paintComponent(Graphics g){
+		public synchronized void paintComponent(Graphics g){
 			super.paintComponent(g);
 			Graphics2D g2d = (Graphics2D) g;
 			g2d.setStroke(new BasicStroke(3.0f));

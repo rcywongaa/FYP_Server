@@ -22,7 +22,7 @@ public class SerialReader extends CommReader implements SerialPortEventListener 
 	
 	private String portName;
 	
-	private float[] data = new float[KeyboardCreator.DATALENGTH]; //3 values per sensor
+	private float[] data = new float[MainActivity.DATALENGTH]; //3 values per sensor
 	
 	public SerialReader(String port){
 		portName = port;

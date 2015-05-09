@@ -4,12 +4,12 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JFrame;
  
 /*
- * TODO: Implement Kalman / Comlplementary filter
  * TODO: Handle unlikely finger initiations
  * 
  * Procedures:
@@ -22,13 +22,9 @@ import javax.swing.JFrame;
 
 public class KeyboardCreator 
 {
-	private final static int KEYBOARDMODE = 1;
-	private final static int MOUSEMODE = 2;
-	public static final int SENSORCOUNT = 6;
 	public static final int READRATE = 20; //ms
 	public final static int RIGHT = 0;
 	public final static int LEFT = 1;
-	public final static int DATALENGTH = SENSORCOUNT * 4 - 1 + 2;  //SensorCount * (3 angles + 1 tap) - palm tap + 2 displacement
 	private final static ScheduledExecutorService SCHEDULER = Executors.newScheduledThreadPool(1);
 	private final static Rectangle screenBounds = GraphicsEnvironment.getLocalGraphicsEnvironment().
     		getMaximumWindowBounds();
@@ -39,6 +35,7 @@ public class KeyboardCreator
 	public static ReadRunnable readRunner = null;
 	private static Renderer renderer[] = null;
 	private static Keyboard keyboard = null;
+	private static ScheduledFuture<?> scheduledEvent;
 	
     public void create(CommReader reader[]) 
     {
@@ -80,12 +77,23 @@ public class KeyboardCreator
 			lHandFrame.setVisible( true );
         }
         
-        for (int i = 0; i < reader.length; i++){ //Ensure reader has begun receiving valid data
-        	while (!reader[i].isReady());
-        	reader[i].write(KEYBOARDMODE);
+        //TODO: Optimize
+        try {
+        	Thread.sleep(10000);
+        } catch (InterruptedException e){
+        	System.err.println("Unwanted Interrupt!");
         }
         
+        for (int i = 0; i < reader.length; i++){ //Ensure reader has begun receiving valid data
+        	reader[i].write(MainActivity.KEYBOARDMODE); //Tells Arduino to run in Keyboard Mode
+        }
         
+        //TODO: Optimize
+        try {
+        	Thread.sleep(10000);
+        } catch (InterruptedException e){
+        	System.err.println("Unwanted Interrupt!");
+        }
         
         System.out.println("Initializing right hand forward...");
         while (renderer[RIGHT].getHand().isInit() == false){
@@ -113,6 +121,8 @@ public class KeyboardCreator
              }
     	}
         
+        System.out.println("Forward initialization complete...");
+        
         while (keyboard == null || keyboard.isInit() == false){
         	if (!MainActivity.HASLEFT){
         		System.out.println("Initializing 'J', 'K', 'L', ';' positions...");
@@ -138,7 +148,7 @@ public class KeyboardCreator
         
         System.out.println("Initialization complete!");
 
-        SCHEDULER.scheduleAtFixedRate(readRunner, 1000, READRATE, TimeUnit.MILLISECONDS);
+        scheduledEvent = SCHEDULER.scheduleAtFixedRate(readRunner, 1000, READRATE, TimeUnit.MILLISECONDS);
 
         keyboardFrame = new JFrame("Keyboard View");
         keyboardFrame.setUndecorated(true);
@@ -192,9 +202,7 @@ public class KeyboardCreator
     }
     
     public void destroy(){
-    	SCHEDULER.shutdown();
-    	for (int i = 0; i < reader.length; i++)
-    		reader[i].close();
+    	scheduledEvent.cancel(false);
     	if (rHandFrame != null) rHandFrame.dispose();
     	rHandFrame = null;
     	if (lHandFrame != null) lHandFrame.dispose();
@@ -202,5 +210,13 @@ public class KeyboardCreator
     	if (keyboardFrame != null) keyboardFrame.dispose();
     	keyboard.close();
     	keyboard = null;
+    	reader = null;
+    }
+    
+    public boolean isCreated(){
+    	if (keyboard == null)
+    		return false;
+    	else
+    		return true;
     }
 }

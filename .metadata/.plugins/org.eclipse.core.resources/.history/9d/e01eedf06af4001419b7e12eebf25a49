@@ -1,0 +1,106 @@
+package main;
+
+import java.awt.AWTException;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import java.util.Date;
+import java.util.LinkedList;
+
+public class clickEvent {
+	private int leftclickfinger;
+	private int rightclickfinger;
+	private int holdclickfinger;
+	final private int check_interal = 3;
+	final private float check_success = (float) 0.2;
+	private long nextclick = 0;
+	boolean able = true;
+	private Robot r;
+	Thread t = null;
+
+	public clickEvent(int leftfinger, int rightfinger, int holdfinger)
+			throws AWTException {
+		r = new Robot();
+		leftclickfinger = leftfinger;
+		rightclickfinger = rightfinger;
+		holdclickfinger = holdfinger;
+
+	}
+
+	public void checkClick(LinkedList<LinkedList<Float>> data) {
+		System.out.println("data:"+data);
+		if (t == null
+				&& data.size() > check_interal
+				&& data.get(check_interal).get(holdclickfinger * 3 + 1)
+						- data.get(0).get(holdclickfinger * 3 + 1) < -check_success) {
+			System.out.println("hold");
+			t = new hold();
+			t.start();
+			MainActivity.dataProcessControl.get_my_datas().clear();
+
+		} else if (t == null
+				&& data.size() > check_interal
+				&& data.get(check_interal).get(holdclickfinger * 3 + 1)
+						- data.get(0).get(holdclickfinger * 3 + 1) > check_success) {
+			System.out.println("release");
+			t = new release();
+			t.start();
+			MainActivity.dataProcessControl.get_my_datas().clear();
+		} else if (t == null
+				&& data.size() > check_interal
+				&& data.get(check_interal).get(leftclickfinger * 3 + 1)
+						- data.get(0).get(leftclickfinger * 3 + 1) > check_success) {
+			t = new leftClick();
+			t.start();
+			MainActivity.dataProcessControl.get_my_datas().clear();
+		} else if (t == null
+				&& data.size() > check_interal
+				&& data.get(check_interal).get(rightclickfinger * 3 + 1)
+						- data.get(0).get(rightclickfinger * 3 + 1) > check_success) {
+			t = new rightClick();
+			t.start();
+			MainActivity.dataProcessControl.get_my_datas().clear();
+		}
+
+	}
+//TODO: Why use threads??
+	class release extends Thread {
+		public void run() {
+
+			r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+			t = null;
+
+		}
+	}
+
+	class hold extends Thread {
+		public void run() {
+
+			r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+			t = null;
+
+		}
+	}
+
+	class leftClick extends Thread {
+		public void run() {
+
+			r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+			r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+			System.out.println("leftclick");
+			t = null;
+
+		}
+	}
+
+	class rightClick extends Thread {
+		public void run() {
+
+			r.mousePress(InputEvent.BUTTON2_DOWN_MASK);
+			r.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
+			System.out.println("rightclick");
+			t = null;
+
+		}
+	}
+
+}

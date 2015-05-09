@@ -37,7 +37,6 @@
 <fullyQualifiedTypeName name="javax.microedition.io.StreamConnectionNotifier"/>
 <fullyQualifiedTypeName name="javax.microedition.io.Connector"/>
 <fullyQualifiedTypeName name="javax.microedition.io.StreamConnection"/>
-<fullyQualifiedTypeName name="java.io.BufferedWriter"/>
 <fullyQualifiedTypeName name="java.io.InputStreamReader"/>
 <fullyQualifiedTypeName name="java.util.Vector"/>
 <fullyQualifiedTypeName name="java.lang.reflect.Method"/>
@@ -51,4 +50,7 @@
 <fullyQualifiedTypeName name="java.util.concurrent.locks.ReentrantLock"/>
 <fullyQualifiedTypeName name="java.awt.Robot"/>
 <fullyQualifiedTypeName name="java.awt.event.KeyEvent"/>
+<fullyQualifiedTypeName name="main.MainActivity"/>
+<fullyQualifiedTypeName name="java.io.BufferedWriter"/>
+<fullyQualifiedTypeName name="java.io.OutputStreamWriter"/>
 </qualifiedTypeNameHistroy>

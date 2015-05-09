@@ -1,0 +1,186 @@
+package main;
+
+import java.awt.Robot;
+import java.util.LinkedList;
+
+import response.filter;
+import response.responseControl;
+
+public class similarityControl {
+	private static double SD = 0.2;
+	private static double check_factor = 0.7;
+	private static double special_check_factor = 0.7;
+
+	public static Thread thread;
+
+	public static void checkGesture(Memory my_memory, LinkedList<Float> Datas) {
+		if (my_memory != null) {
+
+			for (Gesture gestures : my_memory.getMyGesture()) {
+
+				check_gesture_match(gestures, Datas);
+
+			}
+		}
+
+	}
+
+	public static void SpecialcheckGesture(Memory my_memory,
+			LinkedList<Float> Datas) {
+		if (my_memory != null) {
+
+			for (Gesture gestures : my_memory.getMyGesture()) {
+				if (gestures.data != null)
+					special_check_gesture_match(gestures, Datas);
+
+			}
+		}
+
+	}
+
+	private static void special_check_gesture_match(Gesture gest,
+			LinkedList<Float> data) {
+		System.out.println("gesture name:" + gest.data);
+		System.out.println("data:" + data);
+
+		LinkedList<LinkedList<Float>> separate_list_gesture = new LinkedList<LinkedList<Float>>();
+		LinkedList<LinkedList<Float>> separate_list_data = new LinkedList<LinkedList<Float>>();
+
+		for (int i = 0; i < gest.GetData().size(); i = i + 3) {
+			separate_list_gesture.addLast(get_subset_of_linkedlist(
+					gest.GetData(), i, i + 2));
+			separate_list_data
+					.addLast(get_subset_of_linkedlist(data, i, i + 2));
+
+		}
+		double total = 0;
+		for (int i = 0; i < separate_list_gesture.size()
+				&& i < separate_list_data.size(); i++) {
+			total += check_similarity(separate_list_gesture.get(i),
+					separate_list_data.get(i), gest);
+		}
+		if (total > special_check_factor * data.size()) {
+System.out.println("TEST +"+gest.name);
+			switch (gest.name) {
+			case ("set_To_S"):
+				if(main.MainActivity.get_the_control().getState()!=0)
+				{
+					main.MainActivity.get_the_control().changeState(0);
+				}
+				break;
+			case ("set_To_K"):
+				if(main.MainActivity.get_the_control().getState()!=1)
+				{
+					main.MainActivity.get_the_control().changeState(1);
+				}
+				break;
+			case ("set_To_CG"):
+				if(main.MainActivity.get_the_control().getState()!=2)
+				{
+					main.MainActivity.get_the_control().changeState(2);
+				}
+				break;
+			}
+		}
+	}
+
+	public static void check_gesture_match(Gesture gest, LinkedList<Float> data) {
+
+		LinkedList<LinkedList<Float>> separate_list_gesture = new LinkedList<LinkedList<Float>>();
+		LinkedList<LinkedList<Float>> separate_list_data = new LinkedList<LinkedList<Float>>();
+
+		for (int i = 0; i < gest.GetData().size(); i = i + 3) {
+			separate_list_gesture.addLast(get_subset_of_linkedlist(
+					gest.GetData(), i, i + 2));
+			separate_list_data
+					.addLast(get_subset_of_linkedlist(data, i, i + 2));
+
+		}
+		double total = 0;
+		for (int i = 0; i < separate_list_gesture.size()
+				&& i < separate_list_data.size(); i++) {
+			total += check_similarity(separate_list_gesture.get(i),
+					separate_list_data.get(i), gest);
+		}
+		if (total > check_factor * data.size()) {
+			if (MainActivity.get_the_control().getRC().getGest() == null) {
+				MainActivity.get_the_control().getRC().setGest(gest, total);
+				MainActivity.get_the_control().getRC().setStop(false);
+				if (thread != null) {
+					thread.interrupt();
+				}
+				thread = new Thread(MainActivity.get_the_control().getRC());
+				thread.start();
+
+			}
+
+		} else {
+			if (thread != null
+					&& MainActivity.get_the_control().getRC().getGest() != null
+					&& MainActivity.get_the_control().getRC().getGest()
+							.GetName().equals(gest.GetName())) {
+				thread.interrupt();
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				MainActivity.get_the_control().getRC().setGest(null, 0);
+			}
+		}
+	}
+
+	public static LinkedList<Float> get_subset_of_linkedlist(
+			LinkedList<Float> data, int start, int end) {
+		LinkedList<Float> rt_list = new LinkedList<Float>();
+		if (data.size() < end) {
+			return null;
+		}
+		for (int i = start; i <= end; i++) {
+			rt_list.addLast(data.get(i));
+
+		}
+		return rt_list;
+	}
+
+	public static double check_similarity(LinkedList<Float> data1,
+			LinkedList<Float> data2, Gesture gest) {
+
+		double difference1 = abs(data1.get(0) - data2.get(0));
+		if (difference1 > Math.PI) {
+			difference1 = Math.PI * 2 - difference1;
+		}
+		double difference3 = abs(data1.get(2) - data2.get(2));
+		if (difference1 > Math.PI) {
+			difference3 = Math.PI * 2 - difference3;
+		}
+		double difference2 = (abs(data1.get(1) - data2.get(1)));
+
+		// double score1=triangleFilter(0.5,Math.PI-difference1);
+		// double score2=triangleFilter(0.5,Math.PI-difference2);
+		// double score3=triangleFilter(0.5,Math.PI-difference3);
+
+		double score1 = filter.GaussianFilter(difference1, SD);
+		double score2 = filter.GaussianFilter(difference2, SD);
+		double score3 = filter.GaussianFilter(difference3, SD);
+
+		double totalscore = score1 + score2 + score3;
+
+		return totalscore;
+
+	}
+
+	public static void interrupt() {
+		thread.interrupt();
+
+	}
+
+	private static double abs(float f) {
+		if (f < 0) {
+			f = f * -1;
+		}
+
+		return f;
+	}
+
+}

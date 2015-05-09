@@ -1,0 +1,179 @@
+package HandModel;
+import java.awt.event.MouseEvent;
+
+import com.jogamp.opengl.math.Quaternion;
+import com.jogamp.opengl.util.Animator;
+
+import javax.media.opengl.GL2;
+import javax.media.opengl.GLAutoDrawable;
+import javax.media.opengl.GLCapabilities;
+import javax.media.opengl.GLEventListener;
+import javax.media.opengl.GLProfile;
+import javax.media.opengl.awt.GLCanvas;
+import javax.media.opengl.glu.GLU;
+import javax.swing.event.MouseInputAdapter;
+
+/*
+ * TODO: Init hand
+ * Note: Sensor yaw pitch roll is different from model yaw pitch roll
+ */
+
+public class Renderer extends MouseInputAdapter implements GLEventListener {
+	public static final float EPSILON = 0.00001f;
+	public static final float[] EPSILON3 = {EPSILON, EPSILON, EPSILON};
+	
+	private GLCanvas canvas;
+	private Camera cam;
+	private GLU glu;
+	private GL2 gl;
+	private Animator animator;
+	
+	private Hand rHand;
+	
+	public Renderer(){
+		cam = new Camera();
+		glu = new GLU();
+    	GLProfile profile = GLProfile.get(GLProfile.GL2);
+    	GLCapabilities capabilities = new GLCapabilities(profile);
+ 
+    	// The canvas is the widget that's drawn in the JFrame
+    	canvas = new GLCanvas(capabilities);
+    	canvas.addGLEventListener(this);
+    	canvas.addMouseListener(this);
+    	canvas.addMouseMotionListener(this);
+    	canvas.setSize( 300, 300 );
+    	
+    	animator = new Animator();
+    	animator.add(canvas);
+    	animator.start();
+    	
+    	rHand = new Hand();
+	}
+	
+	public GLCanvas getCanvas(){
+		return canvas;
+	}
+
+	public void display(GLAutoDrawable gLDrawable) {
+		gl = gLDrawable.getGL().getGL2();
+		redraw();
+	}
+
+	public void displayChanged(GLAutoDrawable gLDrawable, boolean modeChanged,
+			boolean deviceChanged) {
+		System.out.println("displayChanged called");
+	}
+
+	public void init(GLAutoDrawable gLDrawable) {
+		gl = gLDrawable.getGL().getGL2();
+		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		gl.glShadeModel( GL2.GL_SMOOTH );
+        gl.glEnable( GL2.GL_DEPTH_TEST );
+		gl.glEnable( GL2.GL_NORMALIZE );
+		gl.glColorMaterial ( GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE );
+		gl.glEnable ( GL2.GL_COLOR_MATERIAL );
+		//Consider glLightfv
+
+	}
+
+	public void reshape(GLAutoDrawable gLDrawable, int x, int y, int width,
+			int height) {
+		gl = gLDrawable.getGL().getGL2();
+
+		if (height <= 0) // avoid a divide by zero error!
+		{
+			height = 1;
+		}
+
+		final float h = (float) width / (float) height;
+
+		gl.glViewport(0, 0, width, height);
+		gl.glMatrixMode(GL2.GL_PROJECTION);
+		gl.glLoadIdentity();
+		glu.gluPerspective(45.0f, h, 1.0, 20.0);
+		gl.glMatrixMode(GL2.GL_MODELVIEW);
+		gl.glLoadIdentity();
+	}
+	
+	public void redraw(){
+		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
+		gl.glLoadIdentity();
+		float[] lookAt = cam.getLookAt();
+		glu.gluLookAt(lookAt[0], lookAt[1], lookAt[2], lookAt[3], 
+				lookAt[4], lookAt[5], lookAt[6], lookAt[7], lookAt[8]);
+		
+		//Draw Hand
+		rHand.drawHand(gl);
+		
+		//Draws two joints
+//		gl.glPushMatrix();
+//		gl.glRotatef(rIndex[0], 0.0f, 0.0f, 1.0f);
+//		gl.glRotatef(rIndex[1], 1.0f, 0.0f, 0.0f);
+//		gl.glRotatef(rIndex[2], 0.0f, 1.0f, 0.0f);
+//		Box.drawBox(gl, 0.0f, 0.0f, 0.5f);
+//		gl.glTranslatef(0.0f, 0.0f, 1.1f);
+//		gl.glRotatef(l1Pitch/2, 1.0f, 0.0f, 0.0f);
+//		Box.drawBox(gl, 0.0f, 0.0f, 0.5f);
+//		gl.glPopMatrix();
+//		gl.glFlush();
+	}
+
+	public void dispose(GLAutoDrawable arg0) {
+		System.out.println("dispose() called");
+	}
+	
+	/*********** MOUSE CONTROLS ************/
+	private float prevX = 0;
+	private float prevY = 0;
+	@Override
+	public void mousePressed(MouseEvent arg0) {
+		prevX = arg0.getX();
+		prevY = arg0.getY();
+		//System.out.println("Mouse pressed at " + prevX + " " + prevY);
+	}
+
+	@Override
+	public void mouseDragged(MouseEvent arg0){
+		float newX = arg0.getX();
+		float newY = arg0.getY();
+		float dX = newX - prevX;
+		float dY = newY - prevY;
+		float[] newPos = new float[3];
+		Quaternion rot;
+		
+		float[] right = cam.getRight();
+		//https://www.youtube.com/watch?v=MkNfQtINEjo 48:44
+		if (Math.abs(dX) > EPSILON && Math.abs(dY) > EPSILON){
+			Quaternion rX = new Quaternion(0.0f, 1.0f, 0.0f, canvas.getWidth() / (2 * dX));
+			Quaternion rY = new Quaternion(right[0], right[1], right[2], canvas.getHeight() / (2 * dY));
+			rX.invert();
+			rY.invert();
+			rot = rY.mult(rX);
+		}
+		else if (Math.abs(dX) > EPSILON && Math.abs(dY) < EPSILON){
+			Quaternion rX = new Quaternion(0.0f, 1.0f, 0.0f, canvas.getWidth() / dX);
+			rX.invert();
+			rot = rX;
+		}
+		else if (Math.abs(dX) < EPSILON && Math.abs(dY) > EPSILON){
+			Quaternion rY = new Quaternion(right[0], right[1], right[2], canvas.getHeight() / dY);
+			rY.invert();
+			rot = rY;
+		}
+		else
+			return;
+		rot.normalize();
+		rot.rotateVector(newPos, 0, cam.getPosition(), 0); //vecOut, vecOutOffset, vecIn, vecInOffset
+		
+		cam.setPosition(newPos);
+		prevX = newX;
+		prevY = newY;
+		
+		//canvas.display();
+	}
+	
+	public Hand getHand(){
+		return rHand;
+	}
+	
+}

@@ -1,0 +1,134 @@
+package fxml;
+
+import java.awt.GridLayout;
+import java.io.IOException;
+import java.net.URL;
+import java.util.LinkedList;
+import java.util.ResourceBundle;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+import main.Gesture;
+import main.Memory;
+import main.MemoryControl;
+import main.data;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
+import javafx.fxml.FXML;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Pagination;
+import javafx.scene.control.Slider;
+import javafx.stage.Stage;
+
+public class fxml_setting implements Initializable {
+
+	@FXML
+	Button set_To_CG;
+	@FXML
+	Button set_To_K;
+	@FXML
+	Button set_To_S;
+	@FXML
+	Button back;
+
+	@Override
+	public void initialize(URL location, ResourceBundle resources) {
+
+	}
+
+	public void set_To_CG(ActionEvent event) throws IOException {
+		SaveGesture t = new SaveGesture();
+		t.set_id(((Button) event.getSource()).getId());
+		t.start();
+	}
+
+	public void set_To_S(ActionEvent event) throws IOException {
+		SaveGesture t = new SaveGesture();
+		t.set_id(((Button) event.getSource()).getId());
+		t.start();
+	}
+
+	public void set_To_K(ActionEvent event) throws IOException {
+		SaveGesture t = new SaveGesture();
+		t.set_id(((Button) event.getSource()).getId());
+		t.start();
+	}
+
+	public class SaveGesture extends Thread {
+		private String id;
+
+		public void set_id(String id_) {
+			id = id_;
+		}
+
+		public void run() {
+			JFrame frame = new JFrame("Gesture setting");
+			frame.setSize(180, 50);
+			JPanel panel = new JPanel();
+			panel.setLayout(new GridLayout(2, 1));
+			panel.add(new JLabel("The Gesture will be set in:"));
+			JLabel label = new JLabel(("" + 5));
+			panel.add(label);
+			frame.add(panel);
+			frame.setVisible(true);
+
+			for (int i = 5; i > 0; i--) {
+				label.setText("" + i);
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				if (i == 1) {
+					frame.setVisible(false);
+				}
+				Memory memory = MemoryControl.LoadFromFile_ChangeGesture();
+				LinkedList<Gesture> myGesture = memory.getMyGesture();
+				for (Gesture gest : myGesture) {
+					System.out.println(gest.GetName() + id);
+					if (gest.GetName().equals(id)) {
+						// ??
+						System.out.println("hello");
+
+						data data_ = main.MainActivity.get_the_control()
+								.get_my_datas();
+						gest.setData(data_.getNewestDataRelative());
+
+					}
+				}
+				memory.setGesture(myGesture);
+				MemoryControl.SaveToFile_ChangeGesture(memory);
+			}
+			Memory m = MemoryControl.LoadFromFile_ChangeGesture();
+			for (Gesture gesture : m.getMyGesture()) {
+				System.out.println(gesture.GetName() + "       "
+						+ gesture.GetData());
+			}
+		}
+	}
+
+	public void back(ActionEvent event) throws IOException {
+		String path = "/fxml/menu.fxml";
+
+		FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
+		Parent root = loader.load();
+		Scene scene = new Scene(root);
+		Stage stageTheEventSourceNodeBelongs = (Stage) ((Node) event
+				.getSource()).getScene().getWindow();
+		stageTheEventSourceNodeBelongs.setScene(scene);
+		stageTheEventSourceNodeBelongs.show();
+
+		main.MainActivity.get_the_control().get_my_controller()
+				.set_my_main_controller(loader.getController());
+		main.MainActivity.my_model_controller.model_off();
+
+	}
+}

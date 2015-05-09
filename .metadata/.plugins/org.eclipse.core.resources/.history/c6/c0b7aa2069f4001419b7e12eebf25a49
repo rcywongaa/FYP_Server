@@ -1,0 +1,165 @@
+package main;
+
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+
+import javafx.scene.Scene;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
+
+import java.awt.AWTException;
+import fxml.model_controller;
+import java.util.LinkedList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.swing.JFrame;
+
+import HandModel.Renderer;
+
+public class MainActivity extends Application {
+
+	/************************* IMPORTANT SETTINGS ************************/
+
+	public static final boolean HASMOUSE = false;
+	public static final boolean HASLEFT = false;
+	public static final boolean HASBLUETOOTH = false; // Remember to disconnect
+														// BT
+	public static final boolean DEBUG = true;
+
+	/************************** GLOBAL VARIABLES *************************/
+
+	public final static int KEYBOARDMODE = 1;
+	public final static int MOUSEMODE = 2;
+	public static final int SENSORCOUNT = 6;
+	public final static int DATALENGTH = SENSORCOUNT * 4 - 1 + 2; // SensorCount
+																	// * (3
+																	// angles +
+																	// 1 tap) -
+																	// palm tap
+																	// + 2
+																	// displacement
+	public final static int RIGHT = 0;
+	public final static int LEFT = 1;
+
+	/********************************************************************/
+
+	static DataProcessControl dataProcessControl;
+
+	public static model_controller my_model_controller = new model_controller();
+
+	private static CommReader reader[];
+	final static ScheduledExecutorService scheduler = Executors
+			.newScheduledThreadPool(1);
+	public static Renderer renderer;
+
+	public static void main(String[] args) throws Exception {
+		ConnectionCreator.createConnection();
+		reader = ConnectionCreator.getReader();
+		JFrame a = new JFrame("a");
+		Rectangle rect = new Rectangle(200, 200, Color.RED);
+		ScrollPane s1 = new ScrollPane();
+		s1.setPrefSize(120, 120);
+		s1.setContent(rect);
+
+		MainActivity main = new MainActivity();
+		my_model_controller.create_3d_model();
+		dataProcessControl = new DataProcessControl();
+		renderer = new Renderer();
+		// reader[RIGHT].initialize();
+
+		System.out.println("Started");
+		Memory memory = new Memory();
+		if (MemoryControl.LoadFromFile_ChangeGesture() == null) {
+			init_ChangeGesture();
+		}
+
+		scheduleReader();
+
+		launch(args);
+		System.exit(0);
+
+	}
+
+	public static DataProcessControl get_the_control() {
+		return dataProcessControl;
+
+	}
+
+	@Override
+	public void start(Stage primaryStage) throws Exception {
+		FXMLLoader loader = new FXMLLoader(getClass().getResource(
+				"/fxml/main.fxml"));
+		Parent root = loader.load();
+		Scene scene = new Scene(root, 600, 400);
+		get_the_control().get_my_controller().set_my_main_controller(
+				loader.getController());
+
+		primaryStage.setScene(scene);
+		primaryStage.setTitle("calibration");
+		primaryStage.show();
+
+	}
+
+	public static void scheduleReader() {
+		final Runnable readRunner = new Runnable() {
+			public void run() {
+				if (reader[RIGHT].isReady()) {
+					DataSet dataR = reader[RIGHT].read();
+					DataSet dataL = reader[LEFT].read();
+					
+					LinkedList<Float> combinedData = array_to_linkedlist(dataR
+							.getAngles());
+					
+					combinedData.addAll(array_to_linkedlist(dataL.getAngles()));
+
+					try {
+						dataProcessControl.ProcessData(combinedData);
+					} catch (AWTException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+				}
+			}
+		};
+		scheduler.scheduleAtFixedRate(readRunner, 1000, 1,
+				TimeUnit.MILLISECONDS);
+	}
+
+	public static LinkedList<Float> array_to_linkedlist(float[] data) {
+		LinkedList<Float> list = new LinkedList<Float>();
+		for (float r : data) {
+			list.addLast(r);
+		}
+		return list;
+	}
+
+	public static float[] linkedlist_to_array(LinkedList<Float> data) {
+		float[] list = new float[data.size()];
+		for (int i = 0; i < data.size(); i++) {
+			list[i] = data.get(i);
+		}
+		return list;
+	}
+
+	public static float[] get_data() {
+		DataSet data = reader[RIGHT].read();
+		return data.getAngles();
+	}
+
+	private static void init_ChangeGesture() {
+		// TODO Auto-generated method stub
+		Memory memory = new Memory();
+		memory.add_gesture(new Gesture("set_To_CG", null));
+		memory.add_gesture(new Gesture("set_To_K", null));
+		memory.add_gesture(new Gesture("set_To_S", null));
+		MemoryControl.SaveToFile_ChangeGesture(memory);
+
+	}
+
+}

@@ -1,0 +1,135 @@
+package main;
+
+import java.util.LinkedList;
+import java.util.List;
+
+public class data {
+	private int memory_size;
+	private LinkedList<LinkedList<Float>> memory = new LinkedList<LinkedList<Float>>();
+	private int current_pointer = 0;
+	private LinkedList<Float> initial_Yaws = null;
+
+	public data(int size) {
+		memory_size = size;
+
+	}
+
+	public void clear() {
+		LinkedList<LinkedList<Float>> temp = new LinkedList<LinkedList<Float>>();
+		temp.add(getNewestData());
+		memory=temp;
+		current_pointer = 1;
+	}
+
+	public LinkedList<LinkedList<Float>> getMemory() {
+		return memory;
+
+	}
+
+	public LinkedList<Float> getNewestData() {
+		if (memory.get(0) == null)
+			return null;
+		else
+			return memory.get(0);
+
+	}
+
+	public LinkedList<Float> getNewestDataRelative() {
+
+		return getRelativeYaws(memory.get(0), initial_Yaws);
+	}
+
+	public LinkedList<Float> getNewestDataRelative_Left() {
+		List<Float> Yaws = initial_Yaws;
+
+		if (Yaws != null) {
+			System.out.println(initial_Yaws.size() / 2 + 1);
+			Yaws = initial_Yaws.subList(initial_Yaws.size() / 2,
+					initial_Yaws.size());
+			System.out.println("jj");
+
+		}
+
+		return getRelativeYaws(
+				memory.get(0).subList(memory.get(0).size() / 2,
+						memory.get(0).size()), Yaws);
+	}
+
+	public LinkedList<Float> getRelativeYaws(List<Float> list, List<Float> yaws) {
+		// System.out.println("entering the data:"+thedata);
+		if (list == null || yaws == null)
+			return null;
+		else {
+
+			LinkedList<Float> output = new LinkedList<Float>();
+			for (float i : list) {
+				output.addLast(i);
+			}
+			for (int i = 0; i < list.size() / 3; i++) {
+
+				float temp = list.get(i * 3 + 2) - yaws.get(i);
+
+				if (temp > 3.14) {
+
+					float temp2 = (float) (temp - 3.14);
+					output.set(i * 3 + 2, (float) (-3.14 + temp2));
+				} else if (temp < -3.14) {
+					float temp2 = (float) -(temp + 3.14);
+					output.set(i * 3 + 2, (float) (3.14 - temp2));
+
+				} else {
+					output.set(i * 3 + 2, temp);
+
+				}
+
+			}
+			// System.out.println("leaving the data:"+thedata);
+
+			return output;
+		}
+	}
+
+	public LinkedList<Float> rad_to_degree(LinkedList<Float> data) {
+		LinkedList<Float> return_data = new LinkedList<Float>();
+
+		return_data.addLast(-((float) Math.toDegrees((data.get(0))) - 180));
+		return_data.addLast(-(float) Math.toDegrees((data.get(1))));
+
+		LinkedList<Float> temp = new LinkedList<Float>();
+		temp.addLast((float) -1.58);
+		temp.addLast((float) -0.12);
+		temp.addLast((float) 2.6);
+
+		// System.out.println(return_data);
+		return return_data;
+
+	}
+
+	public void addToMemory(LinkedList<Float> data) {
+
+		if (current_pointer < memory_size - 1) {
+			memory.addFirst(data);
+			current_pointer++;
+
+		} else {
+			memory.removeLast();
+			memory.addFirst(data);
+		}
+
+		System.out.println(current_pointer);
+	}
+
+	public void setInitialYaws(LinkedList<Float> data) {
+		initial_Yaws = new LinkedList<Float>();
+		for (int i = 0; i < data.size() / 3; i++) {
+
+			initial_Yaws.addLast(data.get(i * 3 + 2));
+		}
+		System.out.println("initial Yaws: " + initial_Yaws);
+	}
+
+	public LinkedList<Float> getInitialYaws() {
+		return initial_Yaws;
+	}
+
+}

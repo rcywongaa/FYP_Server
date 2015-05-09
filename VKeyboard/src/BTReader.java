@@ -3,7 +3,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Vector;
-
 import javax.bluetooth.*;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
@@ -34,7 +33,7 @@ public class BTReader extends CommReader implements DiscoveryListener{
 	RemoteDevice remoteDevice;
 	private static Vector<RemoteDevice> vecDevices = new Vector<RemoteDevice>();
 	
-	private float[] data = new float[KeyboardCreator.DATALENGTH]; //3 values per sensor
+	private float[] data = new float[MainActivity.DATALENGTH]; //3 values per sensor
 	private String btName;
 	Thread updateThread;
 	

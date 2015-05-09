@@ -1,0 +1,213 @@
+package fxml;
+
+import java.awt.HeadlessException;
+import java.awt.Toolkit;
+import java.io.IOException;
+import java.net.URL;
+import java.util.LinkedList;
+import java.util.ResourceBundle;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRootPane;
+import javax.swing.SwingUtilities;
+
+import main.Gesture;
+import main.Memory;
+import main.MemoryControl;
+import HandModel.Hand;
+import HandModel.Renderer;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
+import javafx.embed.swing.*;
+public class fxml_Gesture implements Initializable{
+	@FXML
+	private Button new_gesture;
+
+	public static Renderer renderer=new Renderer();
+	private int new_gesture_screenWidth= 400;
+	private int new_gesture_screenHeight= 50;
+	private JFrame a;
+	private JFrame static_frame ;
+	private LinkedList<Float> data=null;
+	Renderer Static_renderer=new Renderer();
+
+	@FXML
+	 TextField gesture_name;
+	
+	
+	@FXML
+	 StackPane pane;
+
+
+	
+	@Override
+	public void initialize(URL location, ResourceBundle resources) {
+		// TODO Auto-generated method stub
+		
+	}
+	public void create_new_gesture(ActionEvent event) throws IOException
+{
+
+		String path="/fxml/Gesture_newGesture.fxml";
+		String title=" ";
+
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
+			Parent root=loader.load();
+			Scene scene=new Scene(root);
+		    Stage stageTheEventSourceNodeBelongs = (Stage) ((Node)event.getSource()).getScene().getWindow();
+		    stageTheEventSourceNodeBelongs.setScene(scene);
+		    stageTheEventSourceNodeBelongs.show();
+		    ((fxml_Gesture) loader.getController()).create_3d_model();
+
+//		a.setUndecorated(true);
+//		a.getRootPane().setWindowDecorationStyle(JRootPane.NONE);
+		
+	
+	}
+	public void setdata(LinkedList<Float> datas){
+		data=datas;
+	}
+	public void go_to_Gesture_save(ActionEvent event)throws IOException{
+ 		String path="/fxml/Gesture_save.fxml";
+		String title=" ";
+		SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+            a.setVisible(false);
+            }
+        });
+        FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
+		Parent root=loader.load();
+		Scene scene=new Scene(root);
+		
+	    Stage stageTheEventSourceNodeBelongs = (Stage) ((Node)event.getSource()).getScene().getWindow();
+	   ( (fxml_Gesture)loader.getController()).setdata(main.MainActivity.get_the_control().get_my_datas().getNewestDataRelative_Left());
+	   ( (fxml_Gesture)loader.getController()).create_static_model(main.MainActivity.get_the_control().get_my_datas().getNewestData());
+	    stageTheEventSourceNodeBelongs.setScene(scene);
+	    stageTheEventSourceNodeBelongs.show();
+
+
+	}
+	public void open_new_3D_model(ActionEvent event) throws IOException{
+	
+		
+	}
+	public void create_static_model(LinkedList<Float> datas){
+		
+        SwingUtilities.invokeLater(new Runnable() {
+        	
+            @Override
+            public void run() {
+            	
+            	 float[] float_data = main.MainActivity.linkedlist_to_array(datas);
+ 				if (Static_renderer.getHand().isInit() == false){
+ 					Static_renderer.getHand().initRadAngles(main.MainActivity.RIGHT, float_data);
+ 				}
+ 				else {
+ 					Static_renderer.getHand().setRadAngles(float_data);
+ 					
+ 				}
+            	static_frame=new JFrame();
+            	static_frame.setSize(300,300);
+            	static_frame.setVisible(true);
+            	static_frame.add(Static_renderer.getCanvas());
+            	
+            	
+            }
+        });
+	}
+	public  void set_sensors_reading(LinkedList<Float> datas)
+	{
+		
+//		System.out.println(datas);
+		 Platform.runLater(() -> {
+			
+             float[] float_data = main.MainActivity.linkedlist_to_array(datas);
+				if (renderer.getHand().isInit() == false){
+					renderer.getHand().initRadAngles(main.MainActivity.RIGHT, float_data);
+				}
+				else {
+					renderer.getHand().setRadAngles(float_data);
+					
+				}
+             
+         });	
+		 
+	}
+	public void save_gesture(ActionEvent event) throws IOException{
+		System.out.print("data:");
+		System.out.println(data);
+		
+		if(main.MainActivity.get_the_control().lock==false){
+			
+		Memory my_memory=MemoryControl.LoadFromFile();
+		Gesture my_new_gesture=new Gesture(gesture_name.getText(),data);
+		
+		if(my_memory!=null){
+		my_memory.add_gesture(my_new_gesture);}
+		else {
+		 my_memory=new Memory();
+		 my_memory.add_gesture(my_new_gesture);
+		}
+		
+		main.MainActivity.get_the_control().lock_on();
+		MemoryControl.SaveToFile(my_memory);
+		main.MainActivity.get_the_control().lock_off();
+
+		
+		}
+		
+		
+		
+	}
+	public Object ChangeScreen(ActionEvent event,String path,String title,int width,int height,double x ,double y) throws IOException
+	{FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
+		Parent root=loader.load();
+		Scene scene=new Scene(root,width,height);
+	    Stage stageTheEventSourceNodeBelongs = (Stage) ((Node)event.getSource()).getScene().getWindow();
+	    if(x!=-1){
+	    stageTheEventSourceNodeBelongs.setX(x);
+	    }
+	    if(y!=-1){
+	    stageTheEventSourceNodeBelongs.setY(y);
+	    }
+	    stageTheEventSourceNodeBelongs.setScene(scene);
+	    stageTheEventSourceNodeBelongs.setTitle(title);
+	    stageTheEventSourceNodeBelongs.show();
+	    
+		return loader.getController();
+		
+	}
+	
+	 private void create_3d_model() {
+	        SwingUtilities.invokeLater(new Runnable() {
+	            @Override
+	            public void run() {
+	                a=new JFrame();
+	                a.setSize(300,300);
+	                a.setVisible(true);
+	                a.add(renderer.getCanvas());
+//	                a.add(new JLabel("fff"));
+//	               swingNode.setContent(a);
+	            }
+	        });
+	        }
+	 
+	 
+	 
+
+}

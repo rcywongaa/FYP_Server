@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename local variable &apos;data&apos; in &apos;main.MainActivity.scheduleReader().new Runnable() {...}.run()&apos; to &apos;dataR&apos;&#x0D;&#x0A;- Original project: &apos;FYP_&apos;&#x0D;&#x0A;- Original element: &apos;main.MainActivity.scheduleReader().new Runnable() {...}.run().data&apos;&#x0D;&#x0A;- Renamed element: &apos;data&apos;&#x0D;&#x0A;- Update references to refactored element" description="Rename local variable &apos;data&apos;" id="org.eclipse.jdt.ui.rename.local.variable" input="/src&lt;main{MainActivity.java[MainActivity~scheduleReader[~run@data!3179!3214!3187!3190!QDataSet;!0!false" name="dataR" references="true" stamp="1430968663229" version="1.0"/>
+</session>

@@ -2,8 +2,8 @@ import java.util.Arrays;
 
 public class DataSet {
 	private final float EPSILON = 0.99f;
-	private float[] angles = new float[KeyboardCreator.SENSORCOUNT * 3];
-	private boolean[] taps = new boolean[KeyboardCreator.SENSORCOUNT - 1]; // Palm doesn't tap
+	private float[] angles = new float[MainActivity.SENSORCOUNT * 3];
+	private boolean[] taps = new boolean[MainActivity.SENSORCOUNT - 1]; // Palm doesn't tap
 	private float[] palmPos = new float[2];
 
 	public DataSet() {
@@ -13,17 +13,17 @@ public class DataSet {
 	}
 
 	public void update(float[] data) {
-		assert data.length == KeyboardCreator.DATALENGTH : "DataSet() bad input!";
-		for (int i = 0; i < KeyboardCreator.SENSORCOUNT; i++) {
+		assert data.length == MainActivity.DATALENGTH : "DataSet() bad input!";
+		for (int i = 0; i < MainActivity.SENSORCOUNT; i++) {
 			angles[i * 3] = data[i * 3];
 			angles[i * 3 + 1] = data[i * 3 + 1];
 			angles[i * 3 + 2] = data[i * 3 + 2];
-			if (i < KeyboardCreator.SENSORCOUNT - 1)
-				taps[i] = data[KeyboardCreator.SENSORCOUNT * 3 + i] > EPSILON;
+			if (i < MainActivity.SENSORCOUNT - 1)
+				taps[i] = data[MainActivity.SENSORCOUNT * 3 + i] > EPSILON;
 		}
 		if (MainActivity.HASMOUSE) {
-			palmPos[0] = data[KeyboardCreator.DATALENGTH - 2];
-			palmPos[1] = data[KeyboardCreator.DATALENGTH - 1];
+			palmPos[0] = data[MainActivity.DATALENGTH - 2];
+			palmPos[1] = data[MainActivity.DATALENGTH - 1];
 		}
 	}
 	
